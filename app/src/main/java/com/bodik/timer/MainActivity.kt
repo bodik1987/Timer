@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -69,12 +70,6 @@ import kotlin.math.roundToInt
 // Настройки DataStore
 val Context.dataStore by preferencesDataStore(name = "settings")
 
-// Палитра в стиле Tomato
-val TomatoBlue = Color(0xFF4A6572)
-val TomatoGray = Color(0xFFF1F3F4)
-val TomatoActiveTrack = Color(0xFFE8EAF6)
-val TomatoRestRed = Color(0xFFD32F2F)
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,7 +78,7 @@ class MainActivity : ComponentActivity() {
             TimerTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    containerColor = TomatoGray
+                    containerColor = MaterialTheme.colorScheme.surface
                 ) { innerPadding ->
                     TimerScreen(modifier = Modifier.padding(innerPadding))
                 }
@@ -114,8 +109,13 @@ fun TimerScreen(modifier: Modifier = Modifier) {
     var showSheet by remember { mutableStateOf(false) }
     var activePicker by remember { mutableStateOf("") }
 
-    // Плавное кольцо
     val smoothProgress = remember { Animatable(1f) }
+
+    // Цвета из стандартной схемы Material3
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val secondaryColor = MaterialTheme.colorScheme.secondary
+    val errorColor = MaterialTheme.colorScheme.error
+    val trackColor = MaterialTheme.colorScheme.surfaceVariant
 
     LaunchedEffect(Unit) {
         context.dataStore.data.map { prefs ->
@@ -125,13 +125,9 @@ fun TimerScreen(modifier: Modifier = Modifier) {
         }.first()
     }
 
-    // Управление анимацией кольца
     LaunchedEffect(isRunning, timeLeft, isWorkPhase) {
         if (isRunning && timeLeft > 0) {
             val totalTime = if (isWorkPhase) setWorkSeconds else setRestSeconds
-            val currentProgress = timeLeft.toFloat() / totalTime
-
-            // Синхронизируем анимацию с каждой секундой для точности, но плавно
             smoothProgress.animateTo(
                 targetValue = (timeLeft - 1).toFloat() / totalTime,
                 animationSpec = tween(durationMillis = 1000, easing = LinearEasing)
@@ -141,7 +137,6 @@ fun TimerScreen(modifier: Modifier = Modifier) {
         }
     }
 
-    // Сброс кольца при смене фазы
     LaunchedEffect(isWorkPhase, currentRepeat) {
         if (currentRepeat > 0) {
             smoothProgress.snapTo(1f)
@@ -232,9 +227,9 @@ fun TimerScreen(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.weight(0.5f))
             Box(contentAlignment = Alignment.Center, modifier = Modifier.size(320.dp)) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
-                    drawCircle(color = TomatoActiveTrack, style = Stroke(width = 10.dp.toPx()))
+                    drawCircle(color = trackColor, style = Stroke(width = 10.dp.toPx()))
                     drawArc(
-                        color = if (isWorkPhase) TomatoBlue else TomatoRestRed,
+                        color = if (isWorkPhase) primaryColor else errorColor,
                         startAngle = -90f,
                         sweepAngle = 360 * smoothProgress.value,
                         useCenter = false,
@@ -245,19 +240,19 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                     Text(
                         if (isWorkPhase) "Работа" else "Отдых",
                         fontSize = 18.sp,
-                        color = if (isWorkPhase) TomatoBlue else TomatoRestRed,
+                        color = if (isWorkPhase) primaryColor else errorColor,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         formatTime(timeLeft),
                         fontSize = 84.sp,
                         fontWeight = FontWeight.Black,
-                        color = Color(0xFF212121)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         "Круг: $currentRepeat из ${setRepeats.toInt()}",
                         fontSize = 18.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.outline
                     )
                 }
             }
@@ -279,8 +274,8 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                     modifier = Modifier
                         .weight(1f)
                         .height(72.dp),
-                    containerColor = Color.White,
-                    contentColor = TomatoBlue,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = primaryColor,
                     isOutlined = true
                 ) { Text("СТОП", fontWeight = FontWeight.Bold) }
             }
@@ -294,8 +289,8 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                 modifier = Modifier
                     .weight(2f)
                     .height(72.dp),
-                containerColor = TomatoBlue,
-                contentColor = Color.White
+                containerColor = primaryColor,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Text(
                     if (isRunning) "ПАУЗА" else "СТАРТ",
@@ -341,7 +336,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                         "${setRepeats.toInt()}",
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TomatoBlue
+                        color = primaryColor
                     )
                 } else {
                     Slider(
@@ -357,7 +352,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                         formatTime(if (isWork) setWorkSeconds.toInt() else setRestSeconds.toInt()),
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TomatoBlue
+                        color = primaryColor
                     )
                 }
             }
@@ -404,7 +399,17 @@ fun TimerValueDisplay(label: String, value: String, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .padding(8.dp)
     ) {
-        Text(label.uppercase(), color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-        Text(value, fontSize = 64.sp, fontWeight = FontWeight.Black, color = Color(0xFF212121))
+        Text(
+            label.uppercase(),
+            color = MaterialTheme.colorScheme.outline,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            value,
+            fontSize = 64.sp,
+            fontWeight = FontWeight.Black,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
