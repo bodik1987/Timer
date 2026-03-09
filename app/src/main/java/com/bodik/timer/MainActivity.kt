@@ -1,5 +1,6 @@
 package com.bodik.timer
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.media.MediaPlayer
 import android.os.Build
@@ -10,13 +11,19 @@ import android.os.VibratorManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,13 +31,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -59,7 +66,14 @@ import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.roundToInt
 
+// Настройки DataStore
 val Context.dataStore by preferencesDataStore(name = "settings")
+
+// Палитра в стиле Tomato
+val TomatoBlue = Color(0xFF4A6572)
+val TomatoGray = Color(0xFFF1F3F4)
+val TomatoActiveTrack = Color(0xFFE8EAF6)
+val TomatoRestRed = Color(0xFFD32F2F)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,7 +83,7 @@ class MainActivity : ComponentActivity() {
             TimerTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = TomatoGray
                 ) { innerPadding ->
                     TimerScreen(modifier = Modifier.padding(innerPadding))
                 }
@@ -97,8 +111,11 @@ fun TimerScreen(modifier: Modifier = Modifier) {
     var isRunning by remember { mutableStateOf(false) }
     var isWorkPhase by remember { mutableStateOf(true) }
 
-    val showSheet = remember { mutableStateOf(false) }
-    val activePicker = remember { mutableStateOf("") }
+    var showSheet by remember { mutableStateOf(false) }
+    var activePicker by remember { mutableStateOf("") }
+
+    // Плавное кольцо
+    val smoothProgress = remember { Animatable(1f) }
 
     LaunchedEffect(Unit) {
         context.dataStore.data.map { prefs ->
@@ -106,6 +123,29 @@ fun TimerScreen(modifier: Modifier = Modifier) {
             setRestSeconds = prefs[REST_KEY] ?: 30f
             setRepeats = prefs[REPEATS_KEY] ?: 10f
         }.first()
+    }
+
+    // Управление анимацией кольца
+    LaunchedEffect(isRunning, timeLeft, isWorkPhase) {
+        if (isRunning && timeLeft > 0) {
+            val totalTime = if (isWorkPhase) setWorkSeconds else setRestSeconds
+            val currentProgress = timeLeft.toFloat() / totalTime
+
+            // Синхронизируем анимацию с каждой секундой для точности, но плавно
+            smoothProgress.animateTo(
+                targetValue = (timeLeft - 1).toFloat() / totalTime,
+                animationSpec = tween(durationMillis = 1000, easing = LinearEasing)
+            )
+        } else if (!isRunning) {
+            smoothProgress.stop()
+        }
+    }
+
+    // Сброс кольца при смене фазы
+    LaunchedEffect(isWorkPhase, currentRepeat) {
+        if (currentRepeat > 0) {
+            smoothProgress.snapTo(1f)
+        }
     }
 
     fun vibrate() {
@@ -132,20 +172,16 @@ fun TimerScreen(modifier: Modifier = Modifier) {
         }
     }
 
-    LaunchedEffect(isRunning, timeLeft, isWorkPhase) {
+    LaunchedEffect(isRunning, timeLeft) {
         if (isRunning && timeLeft > 0) {
-            when (timeLeft) {
-                3 -> {
-                    playSound(R.raw.finish_1); vibrate()
+            if (timeLeft <= 3) {
+                val soundId = when (timeLeft) {
+                    3 -> R.raw.finish_1
+                    2 -> R.raw.finish_2
+                    else -> R.raw.finish_3
                 }
-
-                2 -> {
-                    playSound(R.raw.finish_2); vibrate()
-                }
-
-                1 -> {
-                    playSound(R.raw.finish_3); vibrate()
-                }
+                playSound(soundId)
+                vibrate()
             }
             delay(1000L)
             timeLeft -= 1
@@ -156,13 +192,8 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                     isRunning = false
                     currentRepeat = 0
                 } else {
-                    if (setRestSeconds > 0) {
-                        isWorkPhase = false
-                        timeLeft = setRestSeconds.toInt()
-                    } else {
-                        currentRepeat += 1
-                        timeLeft = setWorkSeconds.toInt()
-                    }
+                    isWorkPhase = false
+                    timeLeft = setRestSeconds.toInt()
                 }
             } else {
                 currentRepeat += 1
@@ -172,6 +203,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
         }
     }
 
+    @SuppressLint("DefaultLocale")
     fun formatTime(seconds: Int): String = String.format("%d:%02d", seconds / 60, seconds % 60)
 
     Column(
@@ -185,70 +217,53 @@ fun TimerScreen(modifier: Modifier = Modifier) {
         if (!isRunning && currentRepeat == 0) {
             Spacer(modifier = Modifier.weight(0.5f))
             TimerValueDisplay("Работа", formatTime(setWorkSeconds.toInt())) {
-                activePicker.value = "work"; showSheet.value = true
+                activePicker = "work"; showSheet = true
             }
             Spacer(modifier = Modifier.height(40.dp))
             TimerValueDisplay("Отдых", formatTime(setRestSeconds.toInt())) {
-                activePicker.value = "rest"; showSheet.value = true
+                activePicker = "rest"; showSheet = true
             }
             Spacer(modifier = Modifier.height(40.dp))
             TimerValueDisplay("Повторы", "${setRepeats.toInt()}") {
-                activePicker.value = "repeats"; showSheet.value = true
+                activePicker = "repeats"; showSheet = true
             }
             Spacer(modifier = Modifier.weight(1f))
         } else {
             Spacer(modifier = Modifier.weight(0.5f))
-
-            // КРУГОВАЯ АНИМАЦИЯ
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(300.dp)) {
-                val totalPhaseTime = if (isWorkPhase) setWorkSeconds else setRestSeconds
-                val progress by animateFloatAsState(
-                    targetValue = if (totalPhaseTime > 0) timeLeft / totalPhaseTime else 0f,
-                    label = "TimerProgress"
-                )
-
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(320.dp)) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
-                    // Фоновое кольцо (серое)
-                    drawCircle(
-                        color = Color.LightGray.copy(alpha = 0.3f),
-                        style = Stroke(width = 12.dp.toPx())
-                    )
-
-                    // Активный прогресс
+                    drawCircle(color = TomatoActiveTrack, style = Stroke(width = 10.dp.toPx()))
                     drawArc(
-                        color = if (isWorkPhase) Color(0xFF4CAF50) else Color(0xFFF44336),
+                        color = if (isWorkPhase) TomatoBlue else TomatoRestRed,
                         startAngle = -90f,
-                        sweepAngle = 360 * progress,
+                        sweepAngle = 360 * smoothProgress.value,
                         useCenter = false,
-                        style = Stroke(width = 12.dp.toPx(), cap = StrokeCap.Round)
+                        style = Stroke(width = 10.dp.toPx(), cap = StrokeCap.Round)
                     )
                 }
-
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = if (isWorkPhase) "РАБОТА" else "ОТДЫХ",
-                        fontSize = 20.sp,
-                        color = if (isWorkPhase) Color(0xFF4CAF50) else Color(0xFFF44336),
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 2.sp
-                    )
-                    Text(
-                        text = formatTime(timeLeft),
-                        fontSize = 80.sp,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Круг: $currentRepeat из ${setRepeats.toInt()}",
+                        if (isWorkPhase) "Работа" else "Отдых",
                         fontSize = 18.sp,
-                        color = MaterialTheme.colorScheme.outline
+                        color = if (isWorkPhase) TomatoBlue else TomatoRestRed,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        formatTime(timeLeft),
+                        fontSize = 84.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color(0xFF212121)
+                    )
+                    Text(
+                        "Круг: $currentRepeat из ${setRepeats.toInt()}",
+                        fontSize = 18.sp,
+                        color = Color.Gray
                     )
                 }
             }
             Spacer(modifier = Modifier.weight(1f))
         }
 
-        // КНОПКИ УПРАВЛЕНИЯ
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -256,28 +271,31 @@ fun TimerScreen(modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (isRunning || currentRepeat > 0) {
-                OutlinedButton(
-                    onClick = { isRunning = false; currentRepeat = 0; isWorkPhase = true },
+                AnimatedTomatoButton(
+                    onClick = {
+                        isRunning = false; currentRepeat = 0; isWorkPhase =
+                        true; scope.launch { smoothProgress.snapTo(1f) }
+                    },
                     modifier = Modifier
                         .weight(1f)
                         .height(72.dp),
-                    shape = RoundedCornerShape(24.dp)
-                ) { Text("СТОП", fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+                    containerColor = Color.White,
+                    contentColor = TomatoBlue,
+                    isOutlined = true
+                ) { Text("СТОП", fontWeight = FontWeight.Bold) }
             }
-
-            Button(
+            AnimatedTomatoButton(
                 onClick = {
                     if (!isRunning && currentRepeat == 0) {
-                        timeLeft = setWorkSeconds.toInt()
-                        currentRepeat = 1
-                        isWorkPhase = true
+                        timeLeft = setWorkSeconds.toInt(); currentRepeat = 1; isWorkPhase = true
                     }
                     isRunning = !isRunning
                 },
                 modifier = Modifier
                     .weight(2f)
                     .height(72.dp),
-                shape = RoundedCornerShape(36.dp)
+                containerColor = TomatoBlue,
+                contentColor = Color.White
             ) {
                 Text(
                     if (isRunning) "ПАУЗА" else "СТАРТ",
@@ -289,71 +307,92 @@ fun TimerScreen(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(40.dp))
     }
 
-    // BOTTOM SHEET
-    if (showSheet.value) {
-        ModalBottomSheet(
-            onDismissRequest = {
-                showSheet.value = false
-                scope.launch {
-                    context.dataStore.edit { prefs ->
-                        prefs[WORK_KEY] = setWorkSeconds
-                        prefs[REST_KEY] = setRestSeconds
-                        prefs[REPEATS_KEY] = setRepeats
-                    }
+    if (showSheet) {
+        ModalBottomSheet(onDismissRequest = {
+            showSheet = false
+            scope.launch {
+                context.dataStore.edit {
+                    it[WORK_KEY] = setWorkSeconds; it[REST_KEY] = setRestSeconds; it[REPEATS_KEY] =
+                    setRepeats
                 }
             }
-        ) {
+        }) {
             Column(
                 Modifier
                     .fillMaxWidth()
                     .padding(bottom = 64.dp, start = 32.dp, end = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val isWork = activePicker.value == "work"
-                val isRest = activePicker.value == "rest"
+                val isWork = activePicker == "work"
                 Text(
-                    if (isWork) "Работа (мин 30 сек)" else if (isRest) "Отдых (макс 5 мин)" else "Повторы",
+                    if (isWork) "Работа (мин 30 сек)" else if (activePicker == "rest") "Отдых" else "Повторы",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(24.dp))
-                when (activePicker.value) {
-                    "work", "rest" -> {
-                        Slider(
-                            value = if (isWork) setWorkSeconds else setRestSeconds,
-                            onValueChange = {
-                                val step = if (isWork) 30f else 10f
-                                val stepped = (it / step).roundToInt() * step
-                                if (isWork) setWorkSeconds = max(30f, stepped) else setRestSeconds =
-                                    stepped
-                            },
-                            valueRange = (if (isWork) 30f else 0f)..(if (isWork) 1800f else 300f)
-                        )
-                        Text(
-                            formatTime(if (isWork) setWorkSeconds.toInt() else setRestSeconds.toInt()),
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    "repeats" -> {
-                        Slider(
-                            value = setRepeats,
-                            onValueChange = { setRepeats = it.roundToInt().toFloat() },
-                            valueRange = 1f..20f,
-                            steps = 19
-                        )
-                        Text(
-                            "${setRepeats.toInt()}",
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                if (activePicker == "repeats") {
+                    Slider(
+                        value = setRepeats,
+                        onValueChange = { setRepeats = it.roundToInt().toFloat() },
+                        valueRange = 1f..20f,
+                        steps = 19
+                    )
+                    Text(
+                        "${setRepeats.toInt()}",
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TomatoBlue
+                    )
+                } else {
+                    Slider(
+                        value = if (isWork) setWorkSeconds else setRestSeconds,
+                        onValueChange = {
+                            val step = if (isWork) 30f else 10f
+                            val value = (it / step).roundToInt() * step
+                            if (isWork) setWorkSeconds = max(30f, value) else setRestSeconds = value
+                        },
+                        valueRange = (if (isWork) 30f else 0f)..(if (isWork) 1800f else 300f)
+                    )
+                    Text(
+                        formatTime(if (isWork) setWorkSeconds.toInt() else setRestSeconds.toInt()),
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TomatoBlue
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+fun AnimatedTomatoButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    containerColor: Color,
+    contentColor: Color,
+    isOutlined: Boolean = false,
+    content: @Composable RowScope.() -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (isPressed) 0.95f else 1f, label = "")
+
+    Surface(
+        onClick = onClick,
+        modifier = modifier.graphicsLayer(scaleX = scale, scaleY = scale),
+        shape = RoundedCornerShape(36.dp),
+        color = containerColor,
+        contentColor = contentColor,
+        border = if (isOutlined) ButtonDefaults.outlinedButtonBorder else null,
+        interactionSource = interactionSource
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            content = content
+        )
     }
 }
 
@@ -365,18 +404,7 @@ fun TimerValueDisplay(label: String, value: String, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .padding(8.dp)
     ) {
-        Text(
-            label.uppercase(),
-            color = MaterialTheme.colorScheme.outline,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 2.sp
-        )
-        Text(
-            value,
-            fontSize = 64.sp,
-            fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Text(label.uppercase(), color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text(value, fontSize = 64.sp, fontWeight = FontWeight.Black, color = Color(0xFF212121))
     }
 }
