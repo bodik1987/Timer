@@ -53,6 +53,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,6 +68,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.roundToInt
+
+// ОПРЕДЕЛЕНИЕ ШРИФТОВ
+val CustomFontFamily = FontFamily(
+    Font(R.font.font_regular, FontWeight.Normal),
+    Font(R.font.font_bold, FontWeight.Bold)
+)
 
 // Настройки DataStore
 val Context.dataStore by preferencesDataStore(name = "settings")
@@ -239,18 +247,21 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         if (isWorkPhase) "Работа" else "Отдых",
+                        fontFamily = CustomFontFamily,
                         fontSize = 18.sp,
                         color = if (isWorkPhase) primaryColor else errorColor,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         formatTime(timeLeft),
+                        fontFamily = CustomFontFamily,
                         fontSize = 84.sp,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         "Круг: $currentRepeat из ${setRepeats.toInt()}",
+                        fontFamily = CustomFontFamily,
                         fontSize = 18.sp,
                         color = MaterialTheme.colorScheme.outline
                     )
@@ -277,7 +288,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                     containerColor = MaterialTheme.colorScheme.surface,
                     contentColor = primaryColor,
                     isOutlined = true
-                ) { Text("СТОП", fontWeight = FontWeight.Bold) }
+                ) { Text("СТОП", fontFamily = CustomFontFamily, fontWeight = FontWeight.Bold) }
             }
             AnimatedTomatoButton(
                 onClick = {
@@ -294,6 +305,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
             ) {
                 Text(
                     if (isRunning) "ПАУЗА" else "СТАРТ",
+                    fontFamily = CustomFontFamily,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -321,6 +333,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                 val isWork = activePicker == "work"
                 Text(
                     if (isWork) "Работа (мин 30 сек)" else if (activePicker == "rest") "Отдых" else "Повторы",
+                    fontFamily = CustomFontFamily,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -334,6 +347,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                     )
                     Text(
                         "${setRepeats.toInt()}",
+                        fontFamily = CustomFontFamily,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         color = primaryColor
@@ -350,6 +364,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                     )
                     Text(
                         formatTime(if (isWork) setWorkSeconds.toInt() else setRestSeconds.toInt()),
+                        fontFamily = CustomFontFamily,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         color = primaryColor
@@ -401,12 +416,14 @@ fun TimerValueDisplay(label: String, value: String, onClick: () -> Unit) {
     ) {
         Text(
             label.uppercase(),
+            fontFamily = CustomFontFamily,
             color = MaterialTheme.colorScheme.outline,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold
         )
         Text(
             value,
+            fontFamily = CustomFontFamily,
             fontSize = 64.sp,
             fontWeight = FontWeight.Black,
             color = MaterialTheme.colorScheme.onSurface
