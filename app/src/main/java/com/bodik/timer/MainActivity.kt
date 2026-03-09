@@ -2,6 +2,7 @@ package com.bodik.timer
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
@@ -69,13 +70,16 @@ import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.roundToInt
 
-// ОПРЕДЕЛЕНИЕ ШРИФТОВ
+// ШРИФТЫ
 val CustomFontFamily = FontFamily(
     Font(R.font.font_regular, FontWeight.Normal),
     Font(R.font.font_bold, FontWeight.Bold)
 )
 
-// Настройки DataStore
+// ВЫНЕСЕННАЯ ФУНКЦИЯ (теперь доступна везде)
+@SuppressLint("DefaultLocale")
+fun formatTime(seconds: Int): String = String.format("%d:%02d", seconds / 60, seconds % 60)
+
 val Context.dataStore by preferencesDataStore(name = "settings")
 
 class MainActivity : ComponentActivity() {
@@ -119,9 +123,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
 
     val smoothProgress = remember { Animatable(1f) }
 
-    // Цвета из стандартной схемы Material3
     val primaryColor = MaterialTheme.colorScheme.primary
-    val secondaryColor = MaterialTheme.colorScheme.secondary
     val errorColor = MaterialTheme.colorScheme.error
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
 
@@ -146,9 +148,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
     }
 
     LaunchedEffect(isWorkPhase, currentRepeat) {
-        if (currentRepeat > 0) {
-            smoothProgress.snapTo(1f)
-        }
+        if (currentRepeat > 0) smoothProgress.snapTo(1f)
     }
 
     fun vibrate() {
@@ -157,15 +157,9 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                 context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
             vibratorManager.defaultVibrator
         } else {
-            @Suppress("DEPRECATION")
-            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            @Suppress("DEPRECATION") context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator.vibrate(100)
-        }
+        vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 
     fun playSound(resId: Int) {
@@ -176,38 +170,51 @@ fun TimerScreen(modifier: Modifier = Modifier) {
     }
 
     LaunchedEffect(isRunning, timeLeft) {
-        if (isRunning && timeLeft > 0) {
-            if (timeLeft <= 3) {
-                val soundId = when (timeLeft) {
-                    3 -> R.raw.finish_1
-                    2 -> R.raw.finish_2
-                    else -> R.raw.finish_3
-                }
-                playSound(soundId)
-                vibrate()
+        if (isRunning) {
+            // УПРАВЛЕНИЕ СЕРВИСОМ УВЕДОМЛЕНИЙ
+            val intent = Intent(context, TimerService::class.java).apply {
+                putExtra("TIME_LEFT", formatTime(timeLeft))
+                putExtra("PHASE", if (isWorkPhase) "Работа" else "Отдых")
             }
-            delay(1000L)
-            timeLeft -= 1
-        } else if (isRunning && timeLeft == 0) {
-            val totalRounds = setRepeats.toInt()
-            if (isWorkPhase) {
-                if (currentRepeat >= totalRounds) {
-                    isRunning = false
-                    currentRepeat = 0
-                } else {
-                    isWorkPhase = false
-                    timeLeft = setRestSeconds.toInt()
-                }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
             } else {
-                currentRepeat += 1
-                isWorkPhase = true
-                timeLeft = setWorkSeconds.toInt()
+                context.startService(intent)
             }
+
+            if (timeLeft > 0) {
+                if (timeLeft <= 3) {
+                    val soundId = when (timeLeft) {
+                        3 -> R.raw.finish_1
+                        2 -> R.raw.finish_2
+                        else -> R.raw.finish_3
+                    }
+                    playSound(soundId)
+                    vibrate()
+                }
+                delay(1000L)
+                timeLeft -= 1
+            } else {
+                val totalRounds = setRepeats.toInt()
+                if (isWorkPhase) {
+                    if (currentRepeat >= totalRounds) {
+                        isRunning = false
+                        currentRepeat = 0
+                        context.stopService(Intent(context, TimerService::class.java))
+                    } else {
+                        isWorkPhase = false
+                        timeLeft = setRestSeconds.toInt()
+                    }
+                } else {
+                    currentRepeat += 1
+                    isWorkPhase = true
+                    timeLeft = setWorkSeconds.toInt()
+                }
+            }
+        } else {
+            context.stopService(Intent(context, TimerService::class.java))
         }
     }
-
-    @SuppressLint("DefaultLocale")
-    fun formatTime(seconds: Int): String = String.format("%d:%02d", seconds / 60, seconds % 60)
 
     Column(
         modifier = modifier
@@ -279,8 +286,9 @@ fun TimerScreen(modifier: Modifier = Modifier) {
             if (isRunning || currentRepeat > 0) {
                 AnimatedTomatoButton(
                     onClick = {
-                        isRunning = false; currentRepeat = 0; isWorkPhase =
-                        true; scope.launch { smoothProgress.snapTo(1f) }
+                        isRunning = false; currentRepeat = 0; isWorkPhase = true
+                        scope.launch { smoothProgress.snapTo(1f) }
+                        context.stopService(Intent(context, TimerService::class.java))
                     },
                     modifier = Modifier
                         .weight(1f)
