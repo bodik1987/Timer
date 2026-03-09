@@ -1,3 +1,10 @@
 <resources>
-    <string name="app_name">Таймер</string>
+    <string name="app_name">Timer</string>
+    <string name="work">Work</string>
+    <string name="rest">Rest</string>
+    <string name="repeats">Repeats</string>
+    <string name="round">Round: %1$d of %2$d</string>
+    <string name="start">START</string>
+    <string name="pause">PAUSE</string>
+    <string name="stop">STOP</string>
 </resources>

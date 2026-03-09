@@ -12,6 +12,7 @@ import android.os.VibratorManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -54,6 +55,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource // ДОБАВЛЕНО
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -151,6 +153,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
         if (currentRepeat > 0) smoothProgress.snapTo(1f)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun vibrate() {
         val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vibratorManager =
@@ -174,7 +177,10 @@ fun TimerScreen(modifier: Modifier = Modifier) {
             // УПРАВЛЕНИЕ СЕРВИСОМ УВЕДОМЛЕНИЙ
             val intent = Intent(context, TimerService::class.java).apply {
                 putExtra("TIME_LEFT", formatTime(timeLeft))
-                putExtra("PHASE", if (isWorkPhase) "Работа" else "Отдых")
+                putExtra(
+                    "PHASE",
+                    if (isWorkPhase) "WORK" else "REST"
+                ) // В сервис лучше слать константы на англ.
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
@@ -226,15 +232,15 @@ fun TimerScreen(modifier: Modifier = Modifier) {
 
         if (!isRunning && currentRepeat == 0) {
             Spacer(modifier = Modifier.weight(0.5f))
-            TimerValueDisplay("Работа", formatTime(setWorkSeconds.toInt())) {
+            TimerValueDisplay(stringResource(R.string.work), formatTime(setWorkSeconds.toInt())) {
                 activePicker = "work"; showSheet = true
             }
             Spacer(modifier = Modifier.height(40.dp))
-            TimerValueDisplay("Отдых", formatTime(setRestSeconds.toInt())) {
+            TimerValueDisplay(stringResource(R.string.rest), formatTime(setRestSeconds.toInt())) {
                 activePicker = "rest"; showSheet = true
             }
             Spacer(modifier = Modifier.height(40.dp))
-            TimerValueDisplay("Повторы", "${setRepeats.toInt()}") {
+            TimerValueDisplay(stringResource(R.string.repeats), "${setRepeats.toInt()}") {
                 activePicker = "repeats"; showSheet = true
             }
             Spacer(modifier = Modifier.weight(1f))
@@ -253,7 +259,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        if (isWorkPhase) "Работа" else "Отдых",
+                        if (isWorkPhase) stringResource(R.string.work) else stringResource(R.string.rest),
                         fontFamily = CustomFontFamily,
                         fontSize = 18.sp,
                         color = if (isWorkPhase) primaryColor else errorColor,
@@ -267,7 +273,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        "Круг: $currentRepeat из ${setRepeats.toInt()}",
+                        stringResource(R.string.round, currentRepeat, setRepeats.toInt()),
                         fontFamily = CustomFontFamily,
                         fontSize = 18.sp,
                         color = MaterialTheme.colorScheme.outline
@@ -296,7 +302,13 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                     containerColor = MaterialTheme.colorScheme.surface,
                     contentColor = primaryColor,
                     isOutlined = true
-                ) { Text("СТОП", fontFamily = CustomFontFamily, fontWeight = FontWeight.Bold) }
+                ) {
+                    Text(
+                        stringResource(R.string.stop),
+                        fontFamily = CustomFontFamily,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
             AnimatedTomatoButton(
                 onClick = {
@@ -312,7 +324,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Text(
-                    if (isRunning) "ПАУЗА" else "СТАРТ",
+                    if (isRunning) stringResource(R.string.pause) else stringResource(R.string.start),
                     fontFamily = CustomFontFamily,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold
@@ -340,7 +352,9 @@ fun TimerScreen(modifier: Modifier = Modifier) {
             ) {
                 val isWork = activePicker == "work"
                 Text(
-                    if (isWork) "Работа (мин 30 сек)" else if (activePicker == "rest") "Отдых" else "Повторы",
+                    if (isWork) stringResource(R.string.work) else if (activePicker == "rest") stringResource(
+                        R.string.rest
+                    ) else stringResource(R.string.repeats),
                     fontFamily = CustomFontFamily,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
@@ -416,10 +430,15 @@ fun AnimatedTomatoButton(
 
 @Composable
 fun TimerValueDisplay(label: String, value: String, onClick: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .clickable(onClick = onClick)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
             .padding(8.dp)
     ) {
         Text(
