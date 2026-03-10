@@ -14,7 +14,8 @@ class TimerService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val timeLeft = intent?.getStringExtra("TIME_LEFT") ?: "0:00"
-        val phase = intent?.getStringExtra("PHASE") ?: "Работа"
+        val phase =
+            intent?.getStringExtra("PHASE") ?: getString(R.string.work)
 
         createNotificationChannel()
 
@@ -26,7 +27,12 @@ class TimerService : Service() {
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(phase)
-            .setContentText("Осталось: $timeLeft")
+            .setContentText(
+                getString(
+                    R.string.time_left,
+                    timeLeft
+                )
+            ) // ← вместо "Осталось: $timeLeft"
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setContentIntent(pendingIntent)
             .setOnlyAlertOnce(true)
@@ -40,7 +46,8 @@ class TimerService : Service() {
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val serviceChannel = NotificationChannel(
-                CHANNEL_ID, "Timer Service Channel",
+                CHANNEL_ID,
+                getString(R.string.app_name),
                 NotificationManager.IMPORTANCE_LOW
             )
             val manager = getSystemService(NotificationManager::class.java)
