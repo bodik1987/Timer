@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
@@ -55,6 +56,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource // ДОБАВЛЕНО
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -303,10 +305,10 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                     contentColor = primaryColor,
                     isOutlined = true
                 ) {
-                    Text(
-                        stringResource(R.string.stop),
-                        fontFamily = CustomFontFamily,
-                        fontWeight = FontWeight.Bold
+                    Icon(
+                        painter = painterResource(id = R.drawable.stop),
+                        contentDescription = "",
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
@@ -323,11 +325,12 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                 containerColor = primaryColor,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
-                Text(
-                    if (isRunning) stringResource(R.string.pause) else stringResource(R.string.start),
-                    fontFamily = CustomFontFamily,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
+                Icon(
+                    painter = if (isRunning) painterResource(id = R.drawable.pause) else painterResource(
+                        id = R.drawable.play
+                    ),
+                    contentDescription = "",
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
