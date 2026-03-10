@@ -181,8 +181,8 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                 putExtra("TIME_LEFT", formatTime(timeLeft))
                 putExtra(
                     "PHASE",
-                    if (isWorkPhase) "WORK" else "REST"
-                ) // В сервис лучше слать константы на англ.
+                    if (isWorkPhase) TimerService.PHASE_WORK else TimerService.PHASE_REST
+                )
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)

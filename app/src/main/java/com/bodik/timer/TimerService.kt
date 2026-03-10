@@ -12,10 +12,18 @@ import androidx.core.app.NotificationCompat
 class TimerService : Service() {
     private val CHANNEL_ID = "TimerChannel"
 
+    companion object {
+        const val PHASE_WORK = "WORK"
+        const val PHASE_REST = "REST"
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val timeLeft = intent?.getStringExtra("TIME_LEFT") ?: "0:00"
-        val phase =
-            intent?.getStringExtra("PHASE") ?: getString(R.string.work)
+        val phase = when (intent?.getStringExtra("PHASE")) {
+            "WORK" -> getString(R.string.work)
+            "REST" -> getString(R.string.rest)
+            else -> getString(R.string.work)
+        }
 
         createNotificationChannel()
 
@@ -37,6 +45,7 @@ class TimerService : Service() {
             .setContentIntent(pendingIntent)
             .setOnlyAlertOnce(true)
             .setOngoing(true)
+            .setShowWhen(false)
             .build()
 
         startForeground(1, notification)
