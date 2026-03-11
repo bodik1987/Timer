@@ -104,6 +104,7 @@ class MainActivity : ComponentActivity() {
             timerService = localBinder.getService()
             isBound = true
             // Начинаем слушать состояние сервиса
+            // FIX: используем lifecycleScope из ComponentActivity (не переопределяем его)
             lifecycleScope.launch {
                 timerService!!.state.collect { _serviceState.value = it }
             }
@@ -115,8 +116,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // lifecycleScope доступен через ComponentActivity
-    private val lifecycleScope get() = androidx.lifecycle.ProcessLifecycleOwner.get().lifecycleScope
+    // FIX: удалено переопределение lifecycleScope через ProcessLifecycleOwner,
+    // которое приводило к утечке корутин после уничтожения Activity.
+    // ComponentActivity уже предоставляет корректный lifecycleScope.
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -158,8 +160,11 @@ class MainActivity : ComponentActivity() {
         } else {
             startService(intent)
         }
-        // Привязываемся после запуска
-        bindService(Intent(this, TimerService::class.java), connection, 0)
+        // FIX: привязываемся только если ещё не привязаны, чтобы избежать
+        // двойного вызова onServiceConnected и дублирующихся collect-корутин.
+        if (!isBound) {
+            bindService(Intent(this, TimerService::class.java), connection, 0)
+        }
     }
 
     private fun sendAction(action: String) {
@@ -217,16 +222,25 @@ fun TimerScreen(
     }
 
     // Анимация прогресс-круга на основе состояния сервиса
-    LaunchedEffect(timerState.isRunning, timerState.timeLeft, timerState.isWorkPhase) {
-        if (timerState.isRunning && timerState.timeLeft > 0) {
-            val totalTime =
-                if (timerState.isWorkPhase) timerState.workSeconds else timerState.restSeconds
-            smoothProgress.animateTo(
-                targetValue = (timerState.timeLeft - 1).toFloat() / totalTime,
-                animationSpec = tween(durationMillis = 1000, easing = LinearEasing)
-            )
-        } else if (!timerState.isRunning) {
-            smoothProgress.stop()
+    LaunchedEffect(
+        timerState.isRunning,
+        timerState.isFinished,
+        timerState.timeLeft,
+        timerState.isWorkPhase
+    ) {
+        when {
+            // FIX: при завершении таймера сбрасываем дугу в 0
+            timerState.isFinished -> smoothProgress.snapTo(0f)
+            timerState.isRunning && timerState.timeLeft > 0 -> {
+                val totalTime =
+                    if (timerState.isWorkPhase) timerState.workSeconds else timerState.restSeconds
+                smoothProgress.animateTo(
+                    targetValue = (timerState.timeLeft - 1).toFloat() / totalTime,
+                    animationSpec = tween(durationMillis = 1000, easing = LinearEasing)
+                )
+            }
+
+            !timerState.isRunning -> smoothProgress.stop()
         }
     }
 
@@ -246,7 +260,9 @@ fun TimerScreen(
     }
 
     fun playSound(resId: Int) {
-        MediaPlayer.create(context, resId)?.apply {
+        // FIX: используем applicationContext вместо context (Activity),
+        // чтобы MediaPlayer не держал ссылку на уничтоженную Activity при повороте экрана.
+        MediaPlayer.create(context.applicationContext, resId)?.apply {
             setOnCompletionListener { release() }
             start()
         }
@@ -265,7 +281,9 @@ fun TimerScreen(
         }
     }
 
-    val isActive = timerState.isRunning || timerState.currentRepeat > 0
+    // FIX: учитываем isFinished, чтобы после завершения таймера
+    // экран возвращался к настройкам, а не оставался на нуле.
+    val isActive = (timerState.isRunning || timerState.currentRepeat > 0) && !timerState.isFinished
 
     Column(
         modifier = modifier

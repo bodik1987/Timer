@@ -10,6 +10,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Не даёт CPU засыпать пока сервис считает -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- FIX: добавлено разрешение для точных будильников (AlarmManager.setExactAndAllowWhileIdle).
+         Без него scheduleFinish() упадёт с SecurityException на Android 12+. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
         android:allowBackup="true"
@@ -36,9 +39,11 @@
             </intent-filter>
         </activity>
 
+        <!-- FIX: exported="true" — AlarmManager отправляет broadcast из системного процесса,
+             поэтому ресивер обязан быть экспортированным, иначе intent не доставится. -->
         <receiver
             android:name=".TimerReceiver"
-            android:exported="false" />
+            android:exported="true" />
 
         <service
             android:name=".TimerService"

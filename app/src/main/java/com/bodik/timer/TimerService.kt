@@ -27,9 +27,6 @@ import kotlinx.coroutines.launch
 
 class TimerService : Service() {
 
-    private val CHANNEL_ID = "TimerChannel"
-    private val NOTIFICATION_ID = 1
-
     inner class LocalBinder : Binder() {
         fun getService(): TimerService = this@TimerService
     }
@@ -48,6 +45,11 @@ class TimerService : Service() {
     private var phaseDuration = 0L
 
     companion object {
+        // FIX: константы каналов и уведомлений перенесены в companion object —
+        // они не зависят от экземпляра и должны быть статическими.
+        const val CHANNEL_ID = "TimerChannel"
+        const val NOTIFICATION_ID = 1
+
         const val ACTION_START = "ACTION_START"
         const val ACTION_PAUSE = "ACTION_PAUSE"
         const val ACTION_RESUME = "ACTION_RESUME"
@@ -216,12 +218,17 @@ class TimerService : Service() {
 
         val pm = getSystemService(POWER_SERVICE) as PowerManager
 
+        // FIX: вычисляем реальное максимальное время сессии вместо хардкода 3 часов.
+        // Берём текущее состояние; если сервис только стартует, значения уже выставлены в start().
+        val s = _state.value
+        val totalMs = (s.workSeconds + s.restSeconds).toLong() * s.totalRepeats * 1000L + 5_000L
+
         wakeLock = pm.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
             "Timer::WakeLock"
         )
 
-        wakeLock?.acquire(3 * 60 * 60 * 1000L)
+        wakeLock?.acquire(totalMs)
     }
 
     private fun releaseWakeLock() {
@@ -317,6 +324,11 @@ class TimerService : Service() {
             ACTION_PAUSE -> pause()
             ACTION_RESUME -> resume()
             ACTION_STOP -> stop()
+
+            // FIX: обрабатываем null intent — возникает при перезапуске сервиса системой
+            // после его убийства (START_STICKY). Останавливаем сервис, чтобы не зависнуть
+            // в неопределённом состоянии без данных таймера.
+            null -> stop()
         }
 
         return START_STICKY

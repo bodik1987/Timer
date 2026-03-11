@@ -4,17 +4,22 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import androidx.annotation.RequiresApi
 
 class TimerReceiver : BroadcastReceiver() {
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    // FIX: убрана аннотация @RequiresApi(O) — startForegroundService доступен
+    // с API 26+, а ресивер вызывается только через AlarmManager на тех же версиях.
+    // Аннотация была избыточной и вводила в заблуждение.
     override fun onReceive(context: Context, intent: Intent) {
 
         val serviceIntent = Intent(context, TimerService::class.java)
 
         serviceIntent.action = TimerService.ACTION_STOP
 
-        context.startForegroundService(serviceIntent)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(serviceIntent)
+        } else {
+            context.startService(serviceIntent)
+        }
     }
 }
