@@ -1,5 +1,8 @@
 package com.bodik.timer
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -10,6 +13,7 @@ import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import android.os.SystemClock
+import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -52,6 +56,30 @@ class TimerService : Service() {
         const val EXTRA_WORK_SECONDS = "WORK_SECONDS"
         const val EXTRA_REST_SECONDS = "REST_SECONDS"
         const val EXTRA_REPEATS = "REPEATS"
+    }
+
+    @RequiresPermission(Manifest.permission.SCHEDULE_EXACT_ALARM)
+    @SuppressLint("ServiceCast")
+    private fun scheduleFinish(seconds: Int) {
+
+        val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
+
+        val intent = Intent(this, TimerReceiver::class.java)
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val trigger = SystemClock.elapsedRealtime() + seconds * 1000L
+
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.ELAPSED_REALTIME_WAKEUP,
+            trigger,
+            pendingIntent
+        )
     }
 
     fun start(workSeconds: Int, restSeconds: Int, repeats: Int) {

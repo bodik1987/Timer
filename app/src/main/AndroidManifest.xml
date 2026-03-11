@@ -36,6 +36,10 @@
             </intent-filter>
         </activity>
 
+        <receiver
+            android:name=".TimerReceiver"
+            android:exported="false" />
+
         <service
             android:name=".TimerService"
             android:foregroundServiceType="specialUse"
