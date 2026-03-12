@@ -21,7 +21,10 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -171,7 +174,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun TimerScreen(
     modifier: Modifier = Modifier,
@@ -346,21 +349,29 @@ fun TimerScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (isActive) {
-                AnimatedTomatoButton(
-                    onClick = {
-                        onStop()
-                        scope.launch { smoothProgress.snapTo(1f) }
-                    },
+                Box(
                     modifier = Modifier
                         .weight(1f)
-                        .height(72.dp),
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = primaryColor,
-                    isOutlined = true
+                        .height(72.dp)
+                        .combinedClickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {},
+                            onLongClick = {
+                                onStop()
+                                scope.launch { smoothProgress.snapTo(1f) }
+                            }
+                        )
+                        .border(
+                            border = ButtonDefaults.outlinedButtonBorder,
+                            shape = RoundedCornerShape(36.dp)
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.stop),
                         contentDescription = "",
+                        tint = primaryColor,
                         modifier = Modifier.size(24.dp)
                     )
                 }
