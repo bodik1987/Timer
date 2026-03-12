@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import android.os.SystemClock
+import android.widget.RemoteViews
 import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.CoroutineScope
@@ -241,12 +242,11 @@ class TimerService : Service() {
     }
 
     private fun updateNotification() {
-
         val s = _state.value
 
-        val phase = if (s.isWorkPhase) getString(R.string.work) else getString(R.string.rest)
-
-        val notificationIntent = Intent(this, MainActivity::class.java)
+        val notificationIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP // Чтобы не плодить копии активити
+        }
 
         val pendingIntent = PendingIntent.getActivity(
             this,
@@ -255,10 +255,16 @@ class TimerService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val remoteViews = RemoteViews(packageName, R.layout.notification_timer).apply {
+            setTextViewText(R.id.notification_time, formatTime(s.timeLeft))
+        }
+
+        // 3. Собираем уведомление
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(phase)
-            .setContentText(getString(R.string.time_left, formatTime(s.timeLeft)))
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+            .setCustomContentView(remoteViews) // Свернутый вид
+            .setCustomBigContentView(remoteViews) // Развернутый вид (те же View, но можно сделать другой XML)
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .setContentIntent(pendingIntent)
             .setOnlyAlertOnce(true)
             .setOngoing(true)
@@ -266,7 +272,6 @@ class TimerService : Service() {
             .build()
 
         val manager = getSystemService(NotificationManager::class.java)
-
         manager.notify(NOTIFICATION_ID, notification)
     }
 
@@ -307,7 +312,6 @@ class TimerService : Service() {
                 )
 
                 val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setContentTitle(getString(R.string.work))
                     .setContentText(getString(R.string.time_left, formatTime(work)))
                     .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
                     .setContentIntent(pendingIntent)
@@ -325,9 +329,6 @@ class TimerService : Service() {
             ACTION_RESUME -> resume()
             ACTION_STOP -> stop()
 
-            // FIX: обрабатываем null intent — возникает при перезапуске сервиса системой
-            // после его убийства (START_STICKY). Останавливаем сервис, чтобы не зависнуть
-            // в неопределённом состоянии без данных таймера.
             null -> stop()
         }
 

@@ -95,7 +95,6 @@ class MainActivity : ComponentActivity() {
     private var timerService: TimerService? = null
     private var isBound = false
 
-    // Прокси StateFlow — до привязки сервиса показываем дефолтное состояние
     private val _serviceState = MutableStateFlow(TimerState())
 
     private val connection = object : ServiceConnection {
@@ -103,8 +102,6 @@ class MainActivity : ComponentActivity() {
             val localBinder = binder as TimerService.LocalBinder
             timerService = localBinder.getService()
             isBound = true
-            // Начинаем слушать состояние сервиса
-            // FIX: используем lifecycleScope из ComponentActivity (не переопределяем его)
             lifecycleScope.launch {
                 timerService!!.state.collect { _serviceState.value = it }
             }
@@ -116,15 +113,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // FIX: удалено переопределение lifecycleScope через ProcessLifecycleOwner,
-    // которое приводило к утечке корутин после уничтожения Activity.
-    // ComponentActivity уже предоставляет корректный lifecycleScope.
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Привязываемся к сервису если он уже запущен
         Intent(this, TimerService::class.java).also { intent ->
             bindService(intent, connection, 0) // 0 = не запускать автоматически
         }
@@ -160,8 +152,6 @@ class MainActivity : ComponentActivity() {
         } else {
             startService(intent)
         }
-        // FIX: привязываемся только если ещё не привязаны, чтобы избежать
-        // двойного вызова onServiceConnected и дублирующихся collect-корутин.
         if (!isBound) {
             bindService(Intent(this, TimerService::class.java), connection, 0)
         }
@@ -221,7 +211,6 @@ fun TimerScreen(
         }.first()
     }
 
-    // Анимация прогресс-круга на основе состояния сервиса
     LaunchedEffect(
         timerState.isRunning,
         timerState.isFinished,
@@ -260,15 +249,12 @@ fun TimerScreen(
     }
 
     fun playSound(resId: Int) {
-        // FIX: используем applicationContext вместо context (Activity),
-        // чтобы MediaPlayer не держал ссылку на уничтоженную Activity при повороте экрана.
         MediaPlayer.create(context.applicationContext, resId)?.apply {
             setOnCompletionListener { release() }
             start()
         }
     }
 
-    // Звук и вибрация — реагируем на изменение timeLeft из сервиса
     LaunchedEffect(timerState.timeLeft) {
         if (timerState.isRunning && timerState.timeLeft in 1..3) {
             val soundId = when (timerState.timeLeft) {
@@ -280,9 +266,6 @@ fun TimerScreen(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) vibrate()
         }
     }
-
-    // FIX: учитываем isFinished, чтобы после завершения таймера
-    // экран возвращался к настройкам, а не оставался на нуле.
     val isActive = (timerState.isRunning || timerState.currentRepeat > 0) && !timerState.isFinished
 
     Column(
@@ -324,11 +307,11 @@ fun TimerScreen(
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        if (timerState.isWorkPhase) stringResource(R.string.work) else stringResource(
+                        if (timerState.isWorkPhase) stringResource(R.string.work).uppercase() else stringResource(
                             R.string.rest
-                        ),
+                        ).uppercase(),
                         fontFamily = CustomFontFamily,
-                        fontSize = 18.sp,
+                        fontSize = 20.sp,
                         color = if (timerState.isWorkPhase) primaryColor else errorColor,
                         fontWeight = FontWeight.Bold
                     )
@@ -339,6 +322,7 @@ fun TimerScreen(
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+                    Spacer(modifier = Modifier.height(14.dp))
                     Text(
                         stringResource(
                             R.string.round,
@@ -346,8 +330,9 @@ fun TimerScreen(
                             timerState.totalRepeats
                         ),
                         fontFamily = CustomFontFamily,
-                        fontSize = 18.sp,
-                        color = MaterialTheme.colorScheme.outline
+                        fontSize = 34.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
@@ -426,9 +411,9 @@ fun TimerScreen(
             ) {
                 val isWork = activePicker == "work"
                 Text(
-                    if (isWork) stringResource(R.string.work)
-                    else if (activePicker == "rest") stringResource(R.string.rest)
-                    else stringResource(R.string.repeats),
+                    if (isWork) stringResource(R.string.work).uppercase()
+                    else if (activePicker == "rest") stringResource(R.string.rest).uppercase()
+                    else stringResource(R.string.repeats).uppercase(),
                     fontFamily = CustomFontFamily,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
@@ -441,10 +426,11 @@ fun TimerScreen(
                         valueRange = 1f..20f,
                         steps = 19
                     )
+                    Spacer(modifier = Modifier.height(24.dp))
                     Text(
                         "${setRepeats.toInt()}",
                         fontFamily = CustomFontFamily,
-                        fontSize = 32.sp,
+                        fontSize = 48.sp,
                         fontWeight = FontWeight.Bold,
                         color = primaryColor
                     )
@@ -458,10 +444,11 @@ fun TimerScreen(
                         },
                         valueRange = (if (isWork) 30f else 0f)..(if (isWork) 1800f else 300f)
                     )
+                    Spacer(modifier = Modifier.height(24.dp))
                     Text(
                         formatTime(if (isWork) setWorkSeconds.toInt() else setRestSeconds.toInt()),
                         fontFamily = CustomFontFamily,
-                        fontSize = 32.sp,
+                        fontSize = 48.sp,
                         fontWeight = FontWeight.Bold,
                         color = primaryColor
                     )
@@ -519,13 +506,13 @@ fun TimerValueDisplay(label: String, value: String, onClick: () -> Unit) {
             label.uppercase(),
             fontFamily = CustomFontFamily,
             color = MaterialTheme.colorScheme.outline,
-            fontSize = 14.sp,
+            fontSize = 20.sp,
             fontWeight = FontWeight.Bold
         )
         Text(
             value,
             fontFamily = CustomFontFamily,
-            fontSize = 64.sp,
+            fontSize = 84.sp,
             fontWeight = FontWeight.Black,
             color = MaterialTheme.colorScheme.onSurface
         )

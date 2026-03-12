@@ -7,9 +7,6 @@ import android.os.Build
 
 class TimerReceiver : BroadcastReceiver() {
 
-    // FIX: убрана аннотация @RequiresApi(O) — startForegroundService доступен
-    // с API 26+, а ресивер вызывается только через AlarmManager на тех же версиях.
-    // Аннотация была избыточной и вводила в заблуждение.
     override fun onReceive(context: Context, intent: Intent) {
 
         val serviceIntent = Intent(context, TimerService::class.java)
