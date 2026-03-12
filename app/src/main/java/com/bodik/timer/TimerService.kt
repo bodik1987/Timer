@@ -61,7 +61,7 @@ class TimerService : Service() {
     }
 
     @RequiresPermission(Manifest.permission.SCHEDULE_EXACT_ALARM)
-    @SuppressLint("ServiceCast")
+    @SuppressLint("ServiceCast", "ScheduleExactAlarm")
     private fun scheduleFinish(seconds: Int) {
 
         val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
@@ -164,7 +164,7 @@ class TimerService : Service() {
 
         if (s.isWorkPhase) {
 
-            if (s.restSeconds == 0) {
+            if (s.restSeconds == 0 || s.currentRepeat >= s.totalRepeats) {
                 nextRound()
             } else {
                 _state.value = s.copy(
