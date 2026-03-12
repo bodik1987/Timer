@@ -282,7 +282,10 @@ fun TimerScreen(
         if (!isActive) {
             // Экран настройки
             Spacer(modifier = Modifier.weight(0.5f))
-            TimerValueDisplay(stringResource(R.string.work), formatTime(setWorkSeconds.toInt())) {
+            BigTimerValueDisplay(
+                stringResource(R.string.work),
+                formatTime(setWorkSeconds.toInt())
+            ) {
                 activePicker = "work"; showSheet = true
             }
             Spacer(modifier = Modifier.height(40.dp))
@@ -356,7 +359,7 @@ fun TimerScreen(
                         .combinedClickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
-                            onClick = {},
+                            onClick = { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) vibrate() },
                             onLongClick = {
                                 onStop()
                                 scope.launch { smoothProgress.snapTo(1f) }
@@ -381,6 +384,7 @@ fun TimerScreen(
                     if (!isActive) {
                         onStart(setWorkSeconds.toInt(), setRestSeconds.toInt(), setRepeats.toInt())
                     } else if (timerState.isRunning) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) vibrate()
                         onPause()
                     } else {
                         onResume()
@@ -524,6 +528,36 @@ fun TimerValueDisplay(label: String, value: String, onClick: () -> Unit) {
             value,
             fontFamily = CustomFontFamily,
             fontSize = 84.sp,
+            fontWeight = FontWeight.Black,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@Composable
+fun BigTimerValueDisplay(label: String, value: String, onClick: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
+            .padding(8.dp)
+    ) {
+        Text(
+            label.uppercase(),
+            fontFamily = CustomFontFamily,
+            color = MaterialTheme.colorScheme.outline,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            value,
+            fontFamily = CustomFontFamily,
+            fontSize = 94.sp,
             fontWeight = FontWeight.Black,
             color = MaterialTheme.colorScheme.onSurface
         )
