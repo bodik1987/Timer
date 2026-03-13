@@ -28,10 +28,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -40,10 +42,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -77,6 +83,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.lifecycleScope
 import com.bodik.timer.ui.theme.TimerTheme
@@ -144,20 +151,30 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         bindService(Intent(this, TimerService::class.java), connection, 0)
         setContent {
-            TimerTheme {
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    containerColor = MaterialTheme.colorScheme.surface
-                ) { innerPadding ->
-                    TimerScreen(
-                        modifier = Modifier.padding(innerPadding),
-                        serviceState = _serviceState,
-                        onStart = ::startTimer,
-                        onPause = { sendAction(TimerService.ACTION_PAUSE) },
-                        onResume = { sendAction(TimerService.ACTION_RESUME) },
-                        onStop = { sendAction(TimerService.ACTION_STOP) }
-                    )
-                }
+            val context = LocalContext.current
+            val scope = rememberCoroutineScope()
+            var activeTheme by remember { mutableStateOf(AppThemes.first()) }
+
+            LaunchedEffect(Unit) {
+                context.dataStore.data.map { it[THEME_KEY] }.first()
+                    ?.let { activeTheme = themeById(it) }
+            }
+
+            TimerTheme(appTheme = activeTheme) {
+                TimerScreen(
+                    serviceState = _serviceState,
+                    onStart = ::startTimer,
+                    onPause = { sendAction(TimerService.ACTION_PAUSE) },
+                    onResume = { sendAction(TimerService.ACTION_RESUME) },
+                    onStop = { sendAction(TimerService.ACTION_STOP) },
+                    activeTheme = activeTheme,
+                    onThemeChange = { theme ->
+                        activeTheme = theme
+                        scope.launch {
+                            context.dataStore.edit { it[THEME_KEY] = theme.id }
+                        }
+                    }
+                )
             }
         }
     }
@@ -185,23 +202,25 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// ─── DataStore keys (stable, created once) ────────────────────────────────────
+// ─── DataStore keys ───────────────────────────────────────────────────────────
 
 private val WORK_KEY = floatPreferencesKey("work_seconds")
 private val REST_KEY = floatPreferencesKey("rest_seconds")
 private val REPEATS_KEY = floatPreferencesKey("repeats")
+private val THEME_KEY = stringPreferencesKey("theme_id")
 
 // ─── TimerScreen ──────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun TimerScreen(
-    modifier: Modifier = Modifier,
     serviceState: StateFlow<TimerState>,
     onStart: (Int, Int, Int) -> Unit,
     onPause: () -> Unit,
     onResume: () -> Unit,
-    onStop: () -> Unit
+    onStop: () -> Unit,
+    activeTheme: AppTheme,
+    onThemeChange: (AppTheme) -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -210,15 +229,19 @@ fun TimerScreen(
     var setWorkSeconds by remember { mutableStateOf(120f) }
     var setRestSeconds by remember { mutableStateOf(30f) }
     var setRepeats by remember { mutableStateOf(10f) }
-    var showSheet by remember { mutableStateOf(false) }
+
+    var showSettingsSheet by remember { mutableStateOf(false) }
+    var showThemeSheet by remember { mutableStateOf(false) }
     var activePicker by remember { mutableStateOf("") }
 
     val smoothProgress = remember { Animatable(1f) }
     val primaryColor = MaterialTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
+    val timerTextColor = activeTheme.timerTextColor ?: MaterialTheme.colorScheme.onSurface
+    val accentColor = activeTheme.accentColor ?: primaryColor
+    val labelColor = activeTheme.labelColor ?: primaryColor.copy(alpha = 0.5f)
 
-    // Load saved settings
     LaunchedEffect(Unit) {
         context.dataStore.data.map { prefs ->
             setWorkSeconds = prefs[WORK_KEY] ?: 120f
@@ -227,7 +250,6 @@ fun TimerScreen(
         }.first()
     }
 
-    // Animate arc progress
     LaunchedEffect(
         timerState.isRunning,
         timerState.isFinished,
@@ -249,12 +271,10 @@ fun TimerScreen(
         }
     }
 
-    // Snap to full at phase start
     LaunchedEffect(timerState.isWorkPhase, timerState.currentRepeat) {
         if (timerState.currentRepeat > 0) smoothProgress.snapTo(1f)
     }
 
-    // Countdown beeps + vibration
     LaunchedEffect(timerState.timeLeft) {
         if (timerState.isRunning && timerState.timeLeft in 1..3) {
             val soundId = when (timerState.timeLeft) {
@@ -269,94 +289,124 @@ fun TimerScreen(
 
     val isActive = (timerState.isRunning || timerState.currentRepeat > 0) && !timerState.isFinished
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(modifier = Modifier.height(40.dp))
-
-        if (!isActive) {
-            IdleDisplay(
-                workSeconds = setWorkSeconds.toInt(),
-                restSeconds = setRestSeconds.toInt(),
-                repeats = setRepeats.toInt(),
-                onPickerOpen = { picker -> activePicker = picker; showSheet = true }
-            )
-        } else {
-            ActiveTimerDisplay(
-                timerState = timerState,
-                smoothProgress = smoothProgress.value,
-                primaryColor = primaryColor,
-                errorColor = errorColor,
-                trackColor = trackColor
-            )
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.surface,
+        topBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 32.dp, end = 16.dp),
+                contentAlignment = Alignment.TopEnd
+            ) {
+                IconButton(onClick = { showThemeSheet = true }) {
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = "Themes",
+                        tint = accentColor,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
         }
-
-        Row(
+    ) { innerPadding ->
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(innerPadding)
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (isActive) {
+            if (!isActive) {
+                IdleDisplay(
+                    workSeconds = setWorkSeconds.toInt(),
+                    restSeconds = setRestSeconds.toInt(),
+                    repeats = setRepeats.toInt(),
+                    timerTextColor = timerTextColor,
+                    labelColor = labelColor,
+                    onPickerOpen = { picker -> activePicker = picker; showSettingsSheet = true }
+                )
+            } else {
+                ActiveTimerDisplay(
+                    timerState = timerState,
+                    smoothProgress = smoothProgress.value,
+                    accentColor = accentColor,
+                    errorColor = errorColor,
+                    trackColor = trackColor,
+                    timerTextColor = timerTextColor,
+                    labelColor = labelColor,
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (isActive) {
+                    AnimatedButton(
+                        onClick = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) vibrate(
+                                context
+                            )
+                        },
+                        onLongClick = {
+                            onStop()
+                            scope.launch { smoothProgress.snapTo(1f) }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(72.dp),
+                        containerColor = Color.Transparent,
+                        contentColor = accentColor,
+                        isOutlined = true
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.stop),
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
                 AnimatedButton(
-                    onClick = { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) vibrate(context) },
-                    onLongClick = {
-                        onStop()
-                        scope.launch { smoothProgress.snapTo(1f) }
+                    onClick = {
+                        when {
+                            !isActive -> onStart(
+                                setWorkSeconds.toInt(),
+                                setRestSeconds.toInt(),
+                                setRepeats.toInt()
+                            )
+
+                            timerState.isRunning -> {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) vibrate(context); onPause()
+                            }
+
+                            else -> onResume()
+                        }
                     },
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(2f)
                         .height(72.dp),
-                    containerColor = Color.Transparent,
-                    contentColor = primaryColor,
-                    isOutlined = true
+                    containerColor = accentColor,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.stop),
+                        painter = painterResource(if (timerState.isRunning) R.drawable.pause else R.drawable.play),
                         contentDescription = null,
                         modifier = Modifier.size(24.dp)
                     )
                 }
             }
-            AnimatedButton(
-                onClick = {
-                    when {
-                        !isActive -> onStart(
-                            setWorkSeconds.toInt(),
-                            setRestSeconds.toInt(),
-                            setRepeats.toInt()
-                        )
-
-                        timerState.isRunning -> {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) vibrate(context); onPause()
-                        }
-
-                        else -> onResume()
-                    }
-                },
-                modifier = Modifier
-                    .weight(2f)
-                    .height(72.dp),
-                containerColor = primaryColor,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ) {
-                Icon(
-                    painter = painterResource(if (timerState.isRunning) R.drawable.pause else R.drawable.play),
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+            Spacer(modifier = Modifier.height(40.dp))
         }
-        Spacer(modifier = Modifier.height(40.dp))
     }
 
-    if (showSheet) {
+    // --- Bottom Sheet: Настройки времени ---
+    if (showSettingsSheet) {
         ModalBottomSheet(
             onDismissRequest = {
-                showSheet = false
+                showSettingsSheet = false
                 scope.launch {
                     context.dataStore.edit {
                         it[WORK_KEY] = setWorkSeconds
@@ -378,15 +428,41 @@ fun TimerScreen(
             )
         }
     }
+
+    // --- Bottom Sheet: Выбор темы ---
+    if (showThemeSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showThemeSheet = false }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 48.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "",
+                    fontFamily = CustomFontFamily,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = accentColor,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+                ThemeSelector(activeTheme = activeTheme, onThemeChange = onThemeChange)
+            }
+        }
+    }
 }
 
-// ─── Idle screen ──────────────────────────────────────────────────────────────
+// ─── UI Sub-components (Idle, Active, Settings, etc) ──────────────────────────
 
 @Composable
 private fun ColumnScope.IdleDisplay(
     workSeconds: Int,
     restSeconds: Int,
     repeats: Int,
+    timerTextColor: Color,
+    labelColor: Color,
     onPickerOpen: (String) -> Unit
 ) {
     Spacer(modifier = Modifier.weight(0.5f))
@@ -395,35 +471,40 @@ private fun ColumnScope.IdleDisplay(
         value = formatTime(workSeconds),
         labelFontSize = 24.sp,
         valueFontSize = 94.sp,
+        valueColor = timerTextColor,
+        labelColor = labelColor,
         onClick = { onPickerOpen("work") }
     )
     Spacer(modifier = Modifier.height(40.dp))
     TimerValueDisplay(
         label = stringResource(R.string.rest),
         value = formatTime(restSeconds),
+        valueColor = timerTextColor,
+        labelColor = labelColor,
         onClick = { onPickerOpen("rest") }
     )
     Spacer(modifier = Modifier.height(40.dp))
     TimerValueDisplay(
         label = stringResource(R.string.repeats),
         value = "$repeats",
+        valueColor = timerTextColor,
+        labelColor = labelColor,
         onClick = { onPickerOpen("repeats") }
     )
     Spacer(modifier = Modifier.weight(1f))
 }
 
-// ─── Active timer display ─────────────────────────────────────────────────────
-
 @Composable
 private fun ColumnScope.ActiveTimerDisplay(
     timerState: TimerState,
     smoothProgress: Float,
-    primaryColor: Color,
+    accentColor: Color,
     errorColor: Color,
-    trackColor: Color
+    trackColor: Color,
+    timerTextColor: Color,
+    labelColor: Color,
 ) {
-    val phaseColor = if (timerState.isWorkPhase) primaryColor else errorColor
-
+    val phaseColor = if (timerState.isWorkPhase) accentColor else errorColor
     Spacer(modifier = Modifier.weight(0.5f))
     Box(contentAlignment = Alignment.Center, modifier = Modifier.size(320.dp)) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -438,11 +519,12 @@ private fun ColumnScope.ActiveTimerDisplay(
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = if (timerState.isWorkPhase) stringResource(R.string.work).uppercase()
-                else stringResource(R.string.rest).uppercase(),
+                text = if (timerState.isWorkPhase) stringResource(R.string.work).uppercase() else stringResource(
+                    R.string.rest
+                ).uppercase(),
                 fontFamily = CustomFontFamily,
                 fontSize = 20.sp,
-                color = phaseColor,
+                color = labelColor,
                 fontWeight = FontWeight.Bold
             )
             Text(
@@ -450,7 +532,7 @@ private fun ColumnScope.ActiveTimerDisplay(
                 fontFamily = CustomFontFamily,
                 fontSize = 84.sp,
                 fontWeight = FontWeight.Black,
-                color = MaterialTheme.colorScheme.onSurface
+                color = timerTextColor
             )
             Spacer(modifier = Modifier.height(14.dp))
             Text(
@@ -461,16 +543,13 @@ private fun ColumnScope.ActiveTimerDisplay(
                 ),
                 fontFamily = CustomFontFamily,
                 fontSize = 34.sp,
-                color = MaterialTheme.colorScheme.primary,
+                color = accentColor,
                 fontWeight = FontWeight.Bold
             )
         }
     }
     Spacer(modifier = Modifier.weight(1f))
 }
-
-
-// ─── Settings bottom sheet content ────────────────────────────────────────────
 
 @Composable
 private fun SettingsPicker(
@@ -485,7 +564,6 @@ private fun SettingsPicker(
 ) {
     val isWork = activePicker == "work"
     val isRepeats = activePicker == "repeats"
-
     val title = when (activePicker) {
         "work" -> stringResource(R.string.work)
         "rest" -> stringResource(R.string.rest)
@@ -500,7 +578,6 @@ private fun SettingsPicker(
     ) {
         Text(title, fontFamily = CustomFontFamily, fontSize = 20.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(24.dp))
-
         if (isRepeats) {
             Slider(
                 value = repeats,
@@ -510,7 +587,7 @@ private fun SettingsPicker(
             )
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = "${repeats.toInt()}",
+                "${repeats.toInt()}",
                 fontFamily = CustomFontFamily,
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Bold,
@@ -520,7 +597,6 @@ private fun SettingsPicker(
             val step = if (isWork) 30f else 10f
             val range = if (isWork) 30f..1800f else 0f..300f
             val current = if (isWork) workSeconds else restSeconds
-
             Slider(
                 value = current,
                 onValueChange = { raw ->
@@ -531,7 +607,7 @@ private fun SettingsPicker(
             )
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = formatTime(current.toInt()),
+                formatTime(current.toInt()),
                 fontFamily = CustomFontFamily,
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Bold,
@@ -540,8 +616,6 @@ private fun SettingsPicker(
         }
     }
 }
-
-// ─── Reusable components ──────────────────────────────────────────────────────
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -562,12 +636,9 @@ fun AnimatedButton(
     Box(
         modifier = modifier
             .graphicsLayer(scaleX = scale, scaleY = scale)
+            .then(if (isOutlined) Modifier.border(1.5.dp, contentColor, shape) else Modifier)
             .clip(shape)
             .background(containerColor)
-            .then(
-                if (isOutlined) Modifier.border(ButtonDefaults.outlinedButtonBorder, shape)
-                else Modifier
-            )
             .combinedClickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -588,11 +659,46 @@ fun AnimatedButton(
 }
 
 @Composable
+fun ThemeSelector(activeTheme: AppTheme, onThemeChange: (AppTheme) -> Unit) {
+    val isDark = isSystemInDarkTheme()
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp)
+    ) {
+        items(AppThemes) { theme ->
+            val isSelected = theme.id == activeTheme.id
+            val themeColor = if (isDark) theme.darkColors.primary else theme.lightColors.primary
+            val shape = RoundedCornerShape(50)
+            Box(
+                modifier = Modifier
+                    .clip(shape)
+                    .background(if (isSelected) themeColor else Color.Transparent)
+                    .border(width = 1.5.dp, color = themeColor, shape = shape)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { onThemeChange(theme) }
+                    .padding(horizontal = 18.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = theme.label,
+                    fontFamily = theme.fontFamily,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isSelected) (if (isSelected && theme.id == "lemon") Color.Black else MaterialTheme.colorScheme.onPrimary) else themeColor
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun TimerValueDisplay(
-    label: String,
-    value: String,
-    labelFontSize: TextUnit = 20.sp,
-    valueFontSize: TextUnit = 84.sp,
+    label: String, value: String, labelFontSize: TextUnit = 20.sp, valueFontSize: TextUnit = 84.sp,
+    valueColor: Color = MaterialTheme.colorScheme.onSurface,
+    labelColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
     onClick: () -> Unit
 ) {
     Column(
@@ -608,7 +714,7 @@ fun TimerValueDisplay(
         Text(
             text = label.uppercase(),
             fontFamily = CustomFontFamily,
-            color = MaterialTheme.colorScheme.outline,
+            color = labelColor,
             fontSize = labelFontSize,
             fontWeight = FontWeight.Bold
         )
@@ -617,7 +723,8 @@ fun TimerValueDisplay(
             fontFamily = CustomFontFamily,
             fontSize = valueFontSize,
             fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.onSurface
+            color = valueColor
         )
     }
 }
+
