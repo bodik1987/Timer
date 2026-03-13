@@ -23,7 +23,6 @@ data class AppTheme(
 private object Palette {
     // Default — purple (Material baseline)
     val Purple80 = Color(0xFFD0BCFF)
-    val Purple40 = Color(0xFF6650A4)
 
     // Acid — кислотный жёлто-зелёный на чёрном
     val AcidGreen = Color(0xFFD9F807)
@@ -49,17 +48,18 @@ private object Palette {
     val TaxiLabel = Color(0xFFFFFFFF)
     val TaxiTrack = Color(0x33000000)  // чёрный 20% — подложка дуги
 
+    val DHLBg = Color(0xFFFFCC00)
+    val DHLAccent = Color(0xFFD40511)
+    val DHLPink = Color(0x88D40511)
+    val DHLLabel = Color(0xFFFFFFFF)
+    val DHLTrack = Color(0x22D40511)
+
     // Watch — светло-серый фон, тёмный текст, красный акцент
     val WatchBg = Color(0xFFD5D5D2)
     val WatchText = Color(0xFF171C1F)
     val WatchAccent = Color(0xFFDF5B49)
     val WatchTrack = Color(0x33DF5B49)
     val WatchSheet = Color(0xFFE8E8E5)  // чуть светлее фона для bottom sheet
-
-    // Cyber — чёрный фон, кислотный циан
-    val CyberBg = Color(0xFF0A0A0A)
-    val CyberAccent = Color(0xFF00F5D4)
-    val CyberTrack = Color(0x2200F5D4)  // циан 13% — подложка дуги
 
     // Mint — бирюзовый фон, чёрный текст
     val MintBg = Color(0xFF31E9E6)
@@ -193,6 +193,40 @@ val AppThemes: List<AppTheme> = listOf(
             surfaceContainerHigh = Palette.TaxiBg,
             onBackground = Palette.TaxiAccent,
             onSurface = Palette.TaxiAccent,
+        ),
+    ),
+
+    AppTheme(
+        id = "dhl",
+        label = "DHL",
+        timerTextColor = Palette.DHLAccent,
+        accentColor = Palette.DHLAccent,
+        labelColor = Palette.DHLPink,
+        lightColors = lightColorScheme(
+            primary = Palette.DHLAccent,
+            onPrimary = Palette.DHLLabel,
+            error = Palette.DHLAccent,
+            background = Palette.DHLBg,
+            surface = Palette.DHLBg,
+            surfaceVariant = Palette.DHLTrack,
+            surfaceContainer = Palette.DHLBg,
+            surfaceContainerLow = Palette.DHLBg,
+            surfaceContainerHigh = Palette.DHLBg,
+            onBackground = Palette.DHLAccent,
+            onSurface = Palette.DHLAccent,
+        ),
+        darkColors = lightColorScheme(
+            primary = Palette.DHLAccent,
+            onPrimary = Palette.DHLLabel,
+            error = Palette.DHLAccent,
+            background = Palette.DHLBg,
+            surface = Palette.DHLBg,
+            surfaceVariant = Palette.DHLTrack,
+            surfaceContainer = Palette.DHLBg,
+            surfaceContainerLow = Palette.DHLBg,
+            surfaceContainerHigh = Palette.DHLBg,
+            onBackground = Palette.DHLAccent,
+            onSurface = Palette.DHLAccent,
         ),
     ),
 
