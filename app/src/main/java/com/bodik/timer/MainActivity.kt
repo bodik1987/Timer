@@ -1,6 +1,7 @@
 package com.bodik.timer
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -59,6 +60,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -72,18 +74,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.lifecycleScope
+import com.bodik.timer.ui.theme.LocalFontFamily
+import com.bodik.timer.ui.theme.TimerTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -215,6 +222,23 @@ private val REPEATS_KEY = floatPreferencesKey("repeats")
 private val THEME_KEY = stringPreferencesKey("theme_id")
 private val FONT_KEY = stringPreferencesKey("font_id")
 
+// ─── Status Bar Management ────────────────────────────────────────────────────
+
+@Composable
+private fun UpdateStatusBar() {
+    val view = LocalView.current
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val isBackgroundLight = backgroundColor.luminance() > 0.5f
+
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window ?: return@SideEffect
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars =
+                isBackgroundLight
+        }
+    }
+}
+
 // ─── TimerScreen ──────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -249,6 +273,9 @@ fun TimerScreen(
     val timerTextColor = activeTheme.timerTextColor ?: MaterialTheme.colorScheme.onSurface
     val accentColor = activeTheme.accentColor ?: primaryColor
     val labelColor = activeTheme.labelColor ?: primaryColor.copy(alpha = 0.5f)
+
+    // Автоматически обновляем цвет иконок статус-бара в зависимости от яркости фона
+    UpdateStatusBar()
 
     LaunchedEffect(Unit) {
         context.dataStore.data.map { prefs ->
@@ -449,27 +476,27 @@ fun TimerScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = stringResource(R.string.themes),
+                    text = "Themes",
                     fontFamily = LocalFontFamily.current,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = accentColor,
-                    modifier = Modifier.padding(bottom = 20.dp)
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
                 ThemeSelector(
                     activeTheme = activeTheme,
                     onThemeChange = onThemeChange
                 )
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    text = stringResource(R.string.fonts),
+                    text = "Fonts",
                     fontFamily = LocalFontFamily.current,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = accentColor,
-                    modifier = Modifier.padding(bottom = 20.dp)
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
                 FontSelector(
                     selectedFont = selectedFont,
@@ -718,7 +745,7 @@ fun ThemeSelector(
             ) {
                 Text(
                     text = theme.label,
-                    fontFamily = LocalFontFamily.current, // можно использовать шрифт темы, но для единообразия используем глобальный
+                    fontFamily = LocalFontFamily.current,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimary else themeColor
@@ -759,7 +786,7 @@ fun FontSelector(
             ) {
                 Text(
                     text = font.label,
-                    fontFamily = font.fontFamily, // предпросмотр выбранным шрифтом
+                    fontFamily = font.fontFamily,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
