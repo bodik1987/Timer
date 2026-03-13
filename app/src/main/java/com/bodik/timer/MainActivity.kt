@@ -75,8 +75,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -86,7 +84,6 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.lifecycleScope
-import com.bodik.timer.ui.theme.TimerTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -96,11 +93,6 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 // ─── Globals ─────────────────────────────────────────────────────────────────
-
-val CustomFontFamily = FontFamily(
-    Font(R.font.font_regular, FontWeight.Normal),
-    Font(R.font.font_bold, FontWeight.Bold)
-)
 
 @SuppressLint("DefaultLocale")
 fun formatTime(seconds: Int): String = String.format("%d:%02d", seconds / 60, seconds % 60)
@@ -154,13 +146,19 @@ class MainActivity : ComponentActivity() {
             val context = LocalContext.current
             val scope = rememberCoroutineScope()
             var activeTheme by remember { mutableStateOf(AppThemes.first()) }
+            var selectedFont by remember { mutableStateOf(AvailableFonts.first()) }
 
             LaunchedEffect(Unit) {
                 context.dataStore.data.map { it[THEME_KEY] }.first()
                     ?.let { activeTheme = themeById(it) }
+                context.dataStore.data.map { it[FONT_KEY] }.first()
+                    ?.let { selectedFont = fontById(it) }
             }
 
-            TimerTheme(appTheme = activeTheme) {
+            TimerTheme(
+                appTheme = activeTheme,
+                fontFamily = selectedFont.fontFamily
+            ) {
                 TimerScreen(
                     serviceState = _serviceState,
                     onStart = ::startTimer,
@@ -172,6 +170,13 @@ class MainActivity : ComponentActivity() {
                         activeTheme = theme
                         scope.launch {
                             context.dataStore.edit { it[THEME_KEY] = theme.id }
+                        }
+                    },
+                    selectedFont = selectedFont,
+                    onFontChange = { font ->
+                        selectedFont = font
+                        scope.launch {
+                            context.dataStore.edit { it[FONT_KEY] = font.id }
                         }
                     }
                 )
@@ -208,6 +213,7 @@ private val WORK_KEY = floatPreferencesKey("work_seconds")
 private val REST_KEY = floatPreferencesKey("rest_seconds")
 private val REPEATS_KEY = floatPreferencesKey("repeats")
 private val THEME_KEY = stringPreferencesKey("theme_id")
+private val FONT_KEY = stringPreferencesKey("font_id")
 
 // ─── TimerScreen ──────────────────────────────────────────────────────────────
 
@@ -221,6 +227,8 @@ fun TimerScreen(
     onStop: () -> Unit,
     activeTheme: AppTheme,
     onThemeChange: (AppTheme) -> Unit,
+    selectedFont: FontOption,
+    onFontChange: (FontOption) -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -429,7 +437,7 @@ fun TimerScreen(
         }
     }
 
-    // --- Bottom Sheet: Выбор темы ---
+    // --- Bottom Sheet: Выбор темы и шрифта ---
     if (showThemeSheet) {
         ModalBottomSheet(
             onDismissRequest = { showThemeSheet = false }
@@ -441,14 +449,32 @@ fun TimerScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "",
-                    fontFamily = CustomFontFamily,
+                    text = stringResource(R.string.themes),
+                    fontFamily = LocalFontFamily.current,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = accentColor,
-                    modifier = Modifier.padding(bottom = 24.dp)
+                    modifier = Modifier.padding(bottom = 20.dp)
                 )
-                ThemeSelector(activeTheme = activeTheme, onThemeChange = onThemeChange)
+                ThemeSelector(
+                    activeTheme = activeTheme,
+                    onThemeChange = onThemeChange
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Text(
+                    text = stringResource(R.string.fonts),
+                    fontFamily = LocalFontFamily.current,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = accentColor,
+                    modifier = Modifier.padding(bottom = 20.dp)
+                )
+                FontSelector(
+                    selectedFont = selectedFont,
+                    onFontChange = onFontChange
+                )
             }
         }
     }
@@ -522,14 +548,14 @@ private fun ColumnScope.ActiveTimerDisplay(
                 text = if (timerState.isWorkPhase) stringResource(R.string.work).uppercase() else stringResource(
                     R.string.rest
                 ).uppercase(),
-                fontFamily = CustomFontFamily,
+                fontFamily = LocalFontFamily.current,
                 fontSize = 20.sp,
                 color = labelColor,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 text = formatTime(timerState.timeLeft),
-                fontFamily = CustomFontFamily,
+                fontFamily = LocalFontFamily.current,
                 fontSize = 84.sp,
                 fontWeight = FontWeight.Black,
                 color = timerTextColor
@@ -541,7 +567,7 @@ private fun ColumnScope.ActiveTimerDisplay(
                     timerState.currentRepeat,
                     timerState.totalRepeats
                 ),
-                fontFamily = CustomFontFamily,
+                fontFamily = LocalFontFamily.current,
                 fontSize = 34.sp,
                 color = accentColor,
                 fontWeight = FontWeight.Bold
@@ -576,7 +602,12 @@ private fun SettingsPicker(
             .padding(bottom = 64.dp, start = 32.dp, end = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(title, fontFamily = CustomFontFamily, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Text(
+            title,
+            fontFamily = LocalFontFamily.current,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold
+        )
         Spacer(modifier = Modifier.height(24.dp))
         if (isRepeats) {
             Slider(
@@ -588,7 +619,7 @@ private fun SettingsPicker(
             Spacer(modifier = Modifier.height(24.dp))
             Text(
                 "${repeats.toInt()}",
-                fontFamily = CustomFontFamily,
+                fontFamily = LocalFontFamily.current,
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Bold,
                 color = primaryColor
@@ -608,7 +639,7 @@ private fun SettingsPicker(
             Spacer(modifier = Modifier.height(24.dp))
             Text(
                 formatTime(current.toInt()),
-                fontFamily = CustomFontFamily,
+                fontFamily = LocalFontFamily.current,
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Bold,
                 color = primaryColor
@@ -659,7 +690,10 @@ fun AnimatedButton(
 }
 
 @Composable
-fun ThemeSelector(activeTheme: AppTheme, onThemeChange: (AppTheme) -> Unit) {
+fun ThemeSelector(
+    activeTheme: AppTheme,
+    onThemeChange: (AppTheme) -> Unit
+) {
     val isDark = isSystemInDarkTheme()
     LazyRow(
         modifier = Modifier.fillMaxWidth(),
@@ -684,10 +718,51 @@ fun ThemeSelector(activeTheme: AppTheme, onThemeChange: (AppTheme) -> Unit) {
             ) {
                 Text(
                     text = theme.label,
-                    fontFamily = theme.fontFamily,
+                    fontFamily = LocalFontFamily.current, // можно использовать шрифт темы, но для единообразия используем глобальный
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (isSelected) (if (isSelected && theme.id == "lemon") Color.Black else MaterialTheme.colorScheme.onPrimary) else themeColor
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else themeColor
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun FontSelector(
+    selectedFont: FontOption,
+    onFontChange: (FontOption) -> Unit
+) {
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp)
+    ) {
+        items(AvailableFonts) { font ->
+            val isSelected = font.id == selectedFont.id
+            val shape = RoundedCornerShape(50)
+            Box(
+                modifier = Modifier
+                    .clip(shape)
+                    .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                    .border(
+                        width = 1.5.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = shape
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { onFontChange(font) }
+                    .padding(horizontal = 18.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = font.label,
+                    fontFamily = font.fontFamily, // предпросмотр выбранным шрифтом
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -713,18 +788,17 @@ fun TimerValueDisplay(
     ) {
         Text(
             text = label.uppercase(),
-            fontFamily = CustomFontFamily,
+            fontFamily = LocalFontFamily.current,
             color = labelColor,
             fontSize = labelFontSize,
             fontWeight = FontWeight.Bold
         )
         Text(
             text = value,
-            fontFamily = CustomFontFamily,
+            fontFamily = LocalFontFamily.current,
             fontSize = valueFontSize,
             fontWeight = FontWeight.Black,
             color = valueColor
         )
     }
 }
-

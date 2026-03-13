@@ -3,6 +3,8 @@
     <string name="work">Work</string>
     <string name="rest">Rest</string>
     <string name="repeats">Repeats</string>
+    <string name="themes">Themes</string>
+    <string name="fonts">Fonts</string>
     <string name="round">%1$d / %2$d</string>
     <string name="time_left">%1$s</string>
 </resources>

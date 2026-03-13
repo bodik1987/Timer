@@ -6,13 +6,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import com.bodik.timer.AppTheme
 import com.bodik.timer.AppThemes
+
+val LocalFontFamily = staticCompositionLocalOf<FontFamily> {
+    error("No font family provided")
+}
 
 @Composable
 fun TimerTheme(
     appTheme: AppTheme = AppThemes.first(),
+    fontFamily: FontFamily,
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
@@ -26,9 +34,11 @@ fun TimerTheme(
         else -> appTheme.lightColors
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = timerTypography(appTheme.fontFamily),
-        content = content
-    )
+    CompositionLocalProvider(LocalFontFamily provides fontFamily) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = timerTypography(fontFamily),
+            content = content
+        )
+    }
 }

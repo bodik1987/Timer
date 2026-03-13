@@ -8,33 +8,14 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Чтобы добавить новую тему — просто допиши объект AppTheme в список AppThemes.
-// Больше ничего менять не нужно.
-// ─────────────────────────────────────────────────────────────────────────────
-
 data class AppTheme(
     val id: String,
     val label: String,
-    val fontFamily: FontFamily,
     val lightColors: ColorScheme,
     val darkColors: ColorScheme,
     val timerTextColor: Color? = null,  // null = использовать onSurface темы
     val accentColor: Color? = null,     // null = использовать primary темы
     val labelColor: Color? = null,      // null = использовать primary.copy(alpha=0.5f)
-)
-
-// ─── Font families ────────────────────────────────────────────────────────────
-// Чтобы добавить шрифт — положи .ttf в res/font и объяви FontFamily здесь:
-//
-// private val FontMono = FontFamily(
-//     Font(R.font.jetbrains_mono_regular, FontWeight.Normal),
-//     Font(R.font.jetbrains_mono_bold, FontWeight.Bold)
-// )
-
-private val FontDefault = FontFamily(
-    Font(R.font.font_regular, FontWeight.Normal),
-    Font(R.font.font_bold, FontWeight.Bold)
 )
 
 // ─── Color palettes ───────────────────────────────────────────────────────────
@@ -104,7 +85,6 @@ val AppThemes: List<AppTheme> = listOf(
     AppTheme(
         id = "default",
         label = "Default",
-        fontFamily = FontDefault,
         lightColors = lightColorScheme(primary = Palette.Purple40),
         darkColors = darkColorScheme(primary = Palette.Purple80),
     ),
@@ -112,7 +92,6 @@ val AppThemes: List<AppTheme> = listOf(
     AppTheme(
         id = "acid",
         label = "Acid",
-        fontFamily = FontDefault,
         timerTextColor = Palette.AcidGreen,
         lightColors = darkColorScheme(
             primary = Palette.AcidGreen,
@@ -145,7 +124,6 @@ val AppThemes: List<AppTheme> = listOf(
     AppTheme(
         id = "fire",
         label = "Fire",
-        fontFamily = FontDefault,
         timerTextColor = Palette.FirePrimary,
         accentColor = Palette.FirePrimary,
         labelColor = Palette.FireLabel,
@@ -180,7 +158,6 @@ val AppThemes: List<AppTheme> = listOf(
     AppTheme(
         id = "neon",
         label = "Neon",
-        fontFamily = FontDefault,
         timerTextColor = Palette.NeonAccent,
         accentColor = Palette.NeonAccent,
         lightColors = darkColorScheme(
@@ -214,7 +191,6 @@ val AppThemes: List<AppTheme> = listOf(
     AppTheme(
         id = "taxi",
         label = "Taxi",
-        fontFamily = FontDefault,
         timerTextColor = Palette.TaxiAccent,
         accentColor = Palette.TaxiAccent,
         labelColor = Palette.TaxiLabel,
@@ -249,7 +225,6 @@ val AppThemes: List<AppTheme> = listOf(
     AppTheme(
         id = "watch",
         label = "Watch",
-        fontFamily = FontDefault,
         timerTextColor = Palette.WatchText,
         accentColor = Palette.WatchAccent,
         labelColor = Palette.WatchAccent,
@@ -284,7 +259,6 @@ val AppThemes: List<AppTheme> = listOf(
     AppTheme(
         id = "mint",
         label = "Mint",
-        fontFamily = FontDefault,
         timerTextColor = Palette.MintText,
         accentColor = Palette.MintText,
         lightColors = lightColorScheme(
@@ -318,7 +292,6 @@ val AppThemes: List<AppTheme> = listOf(
     AppTheme(
         id = "rose",
         label = "Rose",
-        fontFamily = FontDefault,
         timerTextColor = Palette.RoseText,
         accentColor = Palette.RoseText,
         lightColors = lightColorScheme(
@@ -352,7 +325,6 @@ val AppThemes: List<AppTheme> = listOf(
     AppTheme(
         id = "lemon",
         label = "Lemon",
-        fontFamily = FontDefault,
         timerTextColor = Palette.LemonText,
         accentColor = Palette.LemonText,
         lightColors = lightColorScheme(
@@ -369,7 +341,6 @@ val AppThemes: List<AppTheme> = listOf(
             onSurface = Palette.LemonText,
         ),
         darkColors = lightColorScheme(
-            // Используем lightColorScheme даже для темного режима, чтобы сохранить светлый фон
             primary = Palette.LemonText,
             onPrimary = Palette.LemonBg,
             error = Palette.LemonText,
@@ -383,23 +354,34 @@ val AppThemes: List<AppTheme> = listOf(
             onSurface = Palette.LemonText,
         ),
     ),
-
-    // ── Шаблон новой темы ────────────────────────────────────────────────────
-    // AppTheme(
-    //     id = "forest",
-    //     label = "Forest",
-    //     fontFamily = FontDefault,               // или своя FontFamily из res/font
-    //     lightColors = lightColorScheme(
-    //         primary = Color(0xFF2E7D32),
-    //         error   = Color(0xFFB71C1C),        // цвет фазы отдыха
-    //     ),
-    //     darkColors = darkColorScheme(
-    //         primary = Color(0xFFA5D6A7),
-    //         error   = Color(0xFFEF9A9A),
-    //     ),
-    // ),
-
 )
 
 // Удобный доступ по id (используется при загрузке из DataStore)
 fun themeById(id: String): AppTheme = AppThemes.find { it.id == id } ?: AppThemes.first()
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ШРИФТЫ — вынесены отдельно от тем
+// ─────────────────────────────────────────────────────────────────────────────
+
+private val FontDefault = FontFamily(
+    Font(R.font.font_regular, FontWeight.Normal),
+    Font(R.font.font_bold, FontWeight.Bold)
+)
+
+private val PantonFontFamily = FontFamily(
+    Font(R.font.panton_regular, FontWeight.Normal),
+    Font(R.font.panton_bold, FontWeight.Bold)
+)
+
+data class FontOption(
+    val id: String,
+    val label: String,
+    val fontFamily: FontFamily
+)
+
+val AvailableFonts: List<FontOption> = listOf(
+    FontOption("default", "Default", FontDefault),
+    FontOption("panton", "Panton", PantonFontFamily)
+)
+
+fun fontById(id: String): FontOption = AvailableFonts.find { it.id == id } ?: AvailableFonts.first()
