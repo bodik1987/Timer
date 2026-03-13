@@ -68,6 +68,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.edit
@@ -280,11 +281,12 @@ fun TimerScreen(
         Spacer(modifier = Modifier.height(40.dp))
 
         if (!isActive) {
-            // Экран настройки
             Spacer(modifier = Modifier.weight(0.5f))
-            BigTimerValueDisplay(
+            TimerValueDisplay(
                 stringResource(R.string.work),
-                formatTime(setWorkSeconds.toInt())
+                formatTime(setWorkSeconds.toInt()),
+                labelFontSize = 24.sp,
+                valueFontSize = 94.sp
             ) {
                 activePicker = "work"; showSheet = true
             }
@@ -298,7 +300,6 @@ fun TimerScreen(
             }
             Spacer(modifier = Modifier.weight(1f))
         } else {
-            // Экран таймера
             Spacer(modifier = Modifier.weight(0.5f))
             Box(contentAlignment = Alignment.Center, modifier = Modifier.size(320.dp)) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
@@ -505,7 +506,13 @@ fun AnimatedTomatoButton(
 }
 
 @Composable
-fun TimerValueDisplay(label: String, value: String, onClick: () -> Unit) {
+fun TimerValueDisplay(
+    label: String,
+    value: String,
+    labelFontSize: TextUnit = 20.sp,
+    valueFontSize: TextUnit = 84.sp,
+    onClick: () -> Unit
+) {
     val interactionSource = remember { MutableInteractionSource() }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -518,46 +525,16 @@ fun TimerValueDisplay(label: String, value: String, onClick: () -> Unit) {
             .padding(8.dp)
     ) {
         Text(
-            label.uppercase(),
+            text = label.uppercase(),
             fontFamily = CustomFontFamily,
             color = MaterialTheme.colorScheme.outline,
-            fontSize = 20.sp,
+            fontSize = labelFontSize,
             fontWeight = FontWeight.Bold
         )
         Text(
-            value,
+            text = value,
             fontFamily = CustomFontFamily,
-            fontSize = 84.sp,
-            fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-    }
-}
-
-@Composable
-fun BigTimerValueDisplay(label: String, value: String, onClick: () -> Unit) {
-    val interactionSource = remember { MutableInteractionSource() }
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
-            )
-            .padding(8.dp)
-    ) {
-        Text(
-            label.uppercase(),
-            fontFamily = CustomFontFamily,
-            color = MaterialTheme.colorScheme.outline,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            value,
-            fontFamily = CustomFontFamily,
-            fontSize = 94.sp,
+            fontSize = valueFontSize,
             fontWeight = FontWeight.Black,
             color = MaterialTheme.colorScheme.onSurface
         )
