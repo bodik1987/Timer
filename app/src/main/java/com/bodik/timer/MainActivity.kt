@@ -45,6 +45,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -52,6 +53,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -90,8 +92,17 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.lifecycleScope
+import com.bodik.timer.ui.theme.AppTheme
+import com.bodik.timer.ui.theme.AppThemes
+import com.bodik.timer.ui.theme.AvailableFonts
+import com.bodik.timer.ui.theme.FontOption
 import com.bodik.timer.ui.theme.LocalFontFamily
+import com.bodik.timer.ui.theme.ShapeDefaults.FirstLazyRowItemShape
+import com.bodik.timer.ui.theme.ShapeDefaults.LastLazyRowItemShape
+import com.bodik.timer.ui.theme.ShapeDefaults.middleListItemShape
 import com.bodik.timer.ui.theme.TimerTheme
+import com.bodik.timer.ui.theme.fontById
+import com.bodik.timer.ui.theme.themeById
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -769,36 +780,34 @@ fun FontSelector(
 ) {
     LazyRow(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
         contentPadding = PaddingValues(horizontal = 16.dp)
     ) {
-        items(AvailableFonts) { font ->
-            val isSelected = font.id == selectedFont.id
-            val shape = RoundedCornerShape(50)
-            Box(
+        itemsIndexed(AvailableFonts) { index, font ->
+            ListItem(
+                headlineContent = {
+                    val isSelected = font.id == selectedFont.id
+                    Text(
+                        text = font.label,
+                        fontFamily = font.fontFamily,
+                        fontSize = if (isSelected) 18.sp else 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                },
                 modifier = Modifier
-                    .clip(shape)
-                    .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
-                    .border(
-                        width = 1.5.dp,
-                        color = MaterialTheme.colorScheme.primary,
-                        shape = shape
+                    .clip(
+                        when (index) {
+                            0 -> FirstLazyRowItemShape
+                            AvailableFonts.size - 1 -> LastLazyRowItemShape
+                            else -> middleListItemShape
+                        }
                     )
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
                     ) { onFontChange(font) }
-                    .padding(horizontal = 18.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = font.label,
-                    fontFamily = font.fontFamily,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
-                )
-            }
+            )
         }
     }
 }

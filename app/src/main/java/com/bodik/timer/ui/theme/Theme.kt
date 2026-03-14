@@ -10,8 +10,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
-import com.bodik.timer.AppTheme
-import com.bodik.timer.AppThemes
 
 val LocalFontFamily = staticCompositionLocalOf<FontFamily> {
     error("No font family provided")
