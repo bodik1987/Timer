@@ -21,7 +21,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -50,6 +49,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -75,7 +75,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
@@ -578,16 +577,15 @@ private fun ColumnScope.ActiveTimerDisplay(
     val phaseColor = if (timerState.isWorkPhase) accentColor else errorColor
     Spacer(modifier = Modifier.weight(0.5f))
     Box(contentAlignment = Alignment.Center, modifier = Modifier.size(320.dp)) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawCircle(color = trackColor, style = Stroke(width = 16.dp.toPx()))
-            drawArc(
-                color = phaseColor,
-                startAngle = -90f,
-                sweepAngle = 360 * smoothProgress,
-                useCenter = false,
-                style = Stroke(width = 16.dp.toPx(), cap = StrokeCap.Round)
-            )
-        }
+        CircularProgressIndicator(
+            progress = { smoothProgress },
+            modifier = Modifier.fillMaxSize(),
+            color = phaseColor,
+            trackColor = trackColor,
+            strokeWidth = 16.dp,
+            strokeCap = StrokeCap.Round,
+            gapSize = 4.dp
+        )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = if (timerState.isWorkPhase) stringResource(R.string.work).uppercase() else stringResource(
