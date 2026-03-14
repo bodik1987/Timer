@@ -302,6 +302,8 @@ class TimerService : Service() {
                 val rest = intent.getIntExtra(EXTRA_REST_SECONDS, 30)
                 val repeats = intent.getIntExtra(EXTRA_REPEATS, 10)
 
+                start(work, rest, repeats)
+
                 val notificationIntent = Intent(this, MainActivity::class.java)
 
                 val pendingIntent = PendingIntent.getActivity(
@@ -321,8 +323,6 @@ class TimerService : Service() {
                     .build()
 
                 startForeground(NOTIFICATION_ID, notification)
-
-                start(work, rest, repeats)
             }
 
             ACTION_PAUSE -> pause()

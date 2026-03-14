@@ -40,7 +40,6 @@ private object Palette {
 
     val DHLBg = Color(0xFFFFCC00)
     val DHLAccent = Color(0xFFD40511)
-    val DHLPink = Color(0x88D40511)
     val DHLTrack = Color(0x22D40511)
 
     // Watch
@@ -79,6 +78,7 @@ val AppThemes: List<AppTheme> = listOf(
         label = "Neon",
         timerTextColor = Palette.NeonAccent,
         accentColor = Palette.NeonAccent,
+        labelColor = Palette.NeonAccent,
         lightColors = darkColorScheme(
             primary = Palette.NeonAccent,
             onPrimary = Palette.NeonBg,
@@ -146,7 +146,7 @@ val AppThemes: List<AppTheme> = listOf(
         label = "DHL",
         timerTextColor = Palette.DHLAccent,
         accentColor = Palette.DHLAccent,
-        labelColor = Palette.DHLPink,
+        labelColor = Palette.DHLAccent,
         lightColors = lightColorScheme(
             primary = Palette.DHLAccent,
             onPrimary = Palette.White,
@@ -360,12 +360,6 @@ private val OswaldFontFamily = FontFamily(
     Font(R.font.oswald_medium, FontWeight.Bold)
 )
 
-
-private val SportFontFamily = FontFamily(
-    Font(R.font.sport, FontWeight.Normal),
-)
-
-
 data class FontOption(
     val id: String,
     val label: String,
@@ -376,7 +370,6 @@ val AvailableFonts: List<FontOption> = listOf(
     FontOption("default", "Default", FontDefault),
     FontOption("oswald", "Oswald", OswaldFontFamily),
     FontOption("dots", "Dots", DotsFontFamily),
-    FontOption("sport", "Sport", SportFontFamily),
 )
 
 fun fontById(id: String): FontOption = AvailableFonts.find { it.id == id } ?: AvailableFonts.first()

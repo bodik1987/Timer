@@ -468,13 +468,15 @@ fun TimerScreen(
     // --- Bottom Sheet: Выбор темы и шрифта ---
     if (showThemeSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showThemeSheet = false }
+            onDismissRequest = { showThemeSheet = false },
+            containerColor = Color.White, // Цвет фона самой шторки
+            scrimColor = Color.Transparent, // Цвет затемнения фона (прозрачность)
+            contentColor = Color.Black // Цвет контента по умолчанию (текст, иконки)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 48.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(bottom = 48.dp)
             ) {
                 Text(
                     text = "Themes",
@@ -482,7 +484,9 @@ fun TimerScreen(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = accentColor,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier
+                        .padding(bottom = 20.dp)
+                        .padding(start = 16.dp)
                 )
                 ThemeSelector(
                     activeTheme = activeTheme,
@@ -497,7 +501,9 @@ fun TimerScreen(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = accentColor,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier
+                        .padding(bottom = 20.dp)
+                        .padding(start = 16.dp)
                 )
                 FontSelector(
                     selectedFont = selectedFont,
