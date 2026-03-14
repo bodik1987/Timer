@@ -21,71 +21,48 @@ data class AppTheme(
 // ─── Color palettes ───────────────────────────────────────────────────────────
 
 private object Palette {
-    // Default — purple (Material baseline)
+    val Black = Color(0xFF000000)
+    val White = Color(0xFFFFFFFF)
     val Purple80 = Color(0xFFD0BCFF)
-
-    // Acid — кислотный жёлто-зелёный на чёрном
-    val AcidGreen = Color(0xFFD9F807)
-    val AcidRed = Color(0xFFFF3B30)  // цвет фазы отдыха
-    val AcidBg = Color(0xFF000000)
-    val AcidSurface = Color(0xFF0D0D0D)
-    val AcidOnBg = Color(0xFFFFFFFF)
 
     // Fire — оранжевый фон, чёрный акцент, белые лейблы
     val FireBg = Color(0xFFFF4500)
-    val FirePrimary = Color(0xFF000000)
-    val FireLabel = Color(0xFFFFFFFF)
     val FireTrack = Color(0x33000000)  // чёрный 20% — подложка дуги
 
     // Neon — почти чёрный фон, лимонный акцент
     val NeonBg = Color(0xFF08080A)
     val NeonAccent = Color(0xFFE3E535)
-    val NeonTrack = Color(0x33E3E535)  // акцент 20% — подложка дуги
+    val NeonTrack = Color(0x33E3E535)
 
-    // Taxi — жёлтый фон, чёрный акцент, белые лейблы
+    // Taxi
     val TaxiBg = Color(0xFFFEED01)
-    val TaxiAccent = Color(0xFF000000)
-    val TaxiLabel = Color(0xFFFFFFFF)
     val TaxiTrack = Color(0x33000000)  // чёрный 20% — подложка дуги
 
     val DHLBg = Color(0xFFFFCC00)
     val DHLAccent = Color(0xFFD40511)
     val DHLPink = Color(0x88D40511)
-    val DHLLabel = Color(0xFFFFFFFF)
     val DHLTrack = Color(0x22D40511)
 
-    // Watch — светло-серый фон, тёмный текст, красный акцент
+    // Watch
     val WatchBg = Color(0xFFD5D5D2)
     val WatchText = Color(0xFF171C1F)
     val WatchAccent = Color(0xFFDF5B49)
     val WatchTrack = Color(0x33DF5B49)
     val WatchSheet = Color(0xFFE8E8E5)  // чуть светлее фона для bottom sheet
 
-    // Mint — бирюзовый фон, чёрный текст
+    // Mint
     val MintBg = Color(0xFF31E9E6)
-    val MintText = Color(0xFF000000)
     val MintTrack = Color(0x33000000)
 
-    // Rose — розовый фон, чёрный текст
+    // Rose
     val RoseBg = Color(0xFFFD6D8B)
-    val RoseText = Color(0xFF000000)
     val RoseTrack = Color(0x33000000)
 
     val LemonBg = Color(0xFFEEF3CC)
-    val LemonText = Color(0xFF000000)
     val LemonTrack = Color(0x22000000)
-
-    // Algeria — светлый фон, зелёный акцент, красный дополнительный (ранее Forest)
-    val AlgeriaBg = Color(0xFFF7F7F7)
-    val AlgeriaPrimary = Color(0xFF015F32)
-    val AlgeriaError = Color(0xFFCB0F31)
-    val AlgeriaTrack = Color(0x33015F32)  // зелёный 20% — подложка дуги
 }
 
 // ─── Theme list ───────────────────────────────────────────────────────────────
-// Порядок определяет порядок в селекторе.
-// Чтобы добавить тему — допиши AppTheme(...) в этот список. Больше ничего менять не нужно.
-
 val AppThemes: List<AppTheme> = listOf(
 
     AppTheme(
@@ -131,68 +108,36 @@ val AppThemes: List<AppTheme> = listOf(
     ),
 
     AppTheme(
-        id = "acid",
-        label = "Acid",
-        timerTextColor = Palette.AcidGreen,
-        lightColors = darkColorScheme(
-            primary = Palette.AcidGreen,
-            onPrimary = Palette.AcidBg,
-            error = Palette.AcidRed,
-            background = Palette.AcidBg,
-            surface = Palette.AcidBg,
-            surfaceVariant = Palette.AcidSurface,
-            surfaceContainer = Palette.AcidSurface,
-            surfaceContainerLow = Palette.AcidSurface,
-            surfaceContainerHigh = Palette.AcidSurface,
-            onBackground = Palette.AcidOnBg,
-            onSurface = Palette.AcidOnBg,
-        ),
-        darkColors = darkColorScheme(
-            primary = Palette.AcidGreen,
-            onPrimary = Palette.AcidBg,
-            error = Palette.AcidRed,
-            background = Palette.AcidBg,
-            surface = Palette.AcidBg,
-            surfaceVariant = Palette.AcidSurface,
-            surfaceContainer = Palette.AcidSurface,
-            surfaceContainerLow = Palette.AcidSurface,
-            surfaceContainerHigh = Palette.AcidSurface,
-            onBackground = Palette.AcidOnBg,
-            onSurface = Palette.AcidOnBg,
-        ),
-    ),
-
-    AppTheme(
         id = "taxi",
         label = "Taxi",
-        timerTextColor = Palette.TaxiAccent,
-        accentColor = Palette.TaxiAccent,
-        labelColor = Palette.TaxiAccent,
+        timerTextColor = Palette.Black,
+        accentColor = Palette.Black,
+        labelColor = Palette.Black,
         lightColors = lightColorScheme(
-            primary = Palette.TaxiAccent,
-            onPrimary = Palette.TaxiLabel,
-            error = Palette.TaxiAccent,
+            primary = Palette.Black,
+            onPrimary = Palette.White,
+            error = Palette.Black,
             background = Palette.TaxiBg,
             surface = Palette.TaxiBg,
             surfaceVariant = Palette.TaxiTrack,
             surfaceContainer = Palette.TaxiBg,
             surfaceContainerLow = Palette.TaxiBg,
             surfaceContainerHigh = Palette.TaxiBg,
-            onBackground = Palette.TaxiAccent,
-            onSurface = Palette.TaxiAccent,
+            onBackground = Palette.Black,
+            onSurface = Palette.Black,
         ),
         darkColors = lightColorScheme(
-            primary = Palette.TaxiAccent,
-            onPrimary = Palette.TaxiLabel,
-            error = Palette.TaxiAccent,
+            primary = Palette.Black,
+            onPrimary = Palette.White,
+            error = Palette.Black,
             background = Palette.TaxiBg,
             surface = Palette.TaxiBg,
             surfaceVariant = Palette.TaxiTrack,
             surfaceContainer = Palette.TaxiBg,
             surfaceContainerLow = Palette.TaxiBg,
             surfaceContainerHigh = Palette.TaxiBg,
-            onBackground = Palette.TaxiAccent,
-            onSurface = Palette.TaxiAccent,
+            onBackground = Palette.Black,
+            onSurface = Palette.Black,
         ),
     ),
 
@@ -204,7 +149,7 @@ val AppThemes: List<AppTheme> = listOf(
         labelColor = Palette.DHLPink,
         lightColors = lightColorScheme(
             primary = Palette.DHLAccent,
-            onPrimary = Palette.DHLLabel,
+            onPrimary = Palette.White,
             error = Palette.DHLAccent,
             background = Palette.DHLBg,
             surface = Palette.DHLBg,
@@ -217,7 +162,7 @@ val AppThemes: List<AppTheme> = listOf(
         ),
         darkColors = lightColorScheme(
             primary = Palette.DHLAccent,
-            onPrimary = Palette.DHLLabel,
+            onPrimary = Palette.White,
             error = Palette.DHLAccent,
             background = Palette.DHLBg,
             surface = Palette.DHLBg,
@@ -233,67 +178,67 @@ val AppThemes: List<AppTheme> = listOf(
     AppTheme(
         id = "lemon",
         label = "Lemon",
-        timerTextColor = Palette.LemonText,
-        accentColor = Palette.LemonText,
+        timerTextColor = Palette.Black,
+        accentColor = Palette.Black,
         lightColors = lightColorScheme(
-            primary = Palette.LemonText,
+            primary = Palette.Black,
             onPrimary = Palette.LemonBg,
-            error = Palette.LemonText,
+            error = Palette.Black,
             background = Palette.LemonBg,
             surface = Palette.LemonBg,
             surfaceVariant = Palette.LemonTrack,
             surfaceContainer = Palette.LemonBg,
             surfaceContainerLow = Palette.LemonBg,
             surfaceContainerHigh = Palette.LemonBg,
-            onBackground = Palette.LemonText,
-            onSurface = Palette.LemonText,
+            onBackground = Palette.Black,
+            onSurface = Palette.Black,
         ),
         darkColors = lightColorScheme(
-            primary = Palette.LemonText,
+            primary = Palette.Black,
             onPrimary = Palette.LemonBg,
-            error = Palette.LemonText,
+            error = Palette.Black,
             background = Palette.LemonBg,
             surface = Palette.LemonBg,
             surfaceVariant = Palette.LemonTrack,
             surfaceContainer = Palette.LemonBg,
             surfaceContainerLow = Palette.LemonBg,
             surfaceContainerHigh = Palette.LemonBg,
-            onBackground = Palette.LemonText,
-            onSurface = Palette.LemonText,
+            onBackground = Palette.Black,
+            onSurface = Palette.Black,
         ),
     ),
 
     AppTheme(
         id = "fire",
         label = "Fire",
-        timerTextColor = Palette.FirePrimary,
-        accentColor = Palette.FirePrimary,
-        labelColor = Palette.FireLabel,
+        timerTextColor = Palette.Black,
+        accentColor = Palette.Black,
+        labelColor = Palette.Black,
         lightColors = lightColorScheme(
-            primary = Palette.FirePrimary,
-            onPrimary = Palette.FireLabel,
-            error = Palette.FirePrimary,
+            primary = Palette.Black,
+            onPrimary = Palette.White,
+            error = Palette.Black,
             background = Palette.FireBg,
             surface = Palette.FireBg,
             surfaceVariant = Palette.FireTrack,
             surfaceContainer = Palette.FireBg,
             surfaceContainerLow = Palette.FireBg,
             surfaceContainerHigh = Palette.FireBg,
-            onBackground = Palette.FirePrimary,
-            onSurface = Palette.FirePrimary,
+            onBackground = Palette.Black,
+            onSurface = Palette.Black,
         ),
         darkColors = lightColorScheme(
-            primary = Palette.FirePrimary,
-            onPrimary = Palette.FireLabel,
-            error = Palette.FirePrimary,
+            primary = Palette.Black,
+            onPrimary = Palette.White,
+            error = Palette.Black,
             background = Palette.FireBg,
             surface = Palette.FireBg,
             surfaceVariant = Palette.FireTrack,
             surfaceContainer = Palette.FireBg,
             surfaceContainerLow = Palette.FireBg,
             surfaceContainerHigh = Palette.FireBg,
-            onBackground = Palette.FirePrimary,
-            onSurface = Palette.FirePrimary,
+            onBackground = Palette.Black,
+            onSurface = Palette.Black,
         ),
     ),
 
@@ -334,111 +279,73 @@ val AppThemes: List<AppTheme> = listOf(
     AppTheme(
         id = "mint",
         label = "Mint",
-        timerTextColor = Palette.MintText,
-        accentColor = Palette.MintText,
+        timerTextColor = Palette.Black,
+        accentColor = Palette.Black,
         lightColors = lightColorScheme(
-            primary = Palette.MintText,
+            primary = Palette.Black,
             onPrimary = Palette.MintBg,
-            error = Palette.MintText,
+            error = Palette.Black,
             background = Palette.MintBg,
             surface = Palette.MintBg,
             surfaceVariant = Palette.MintTrack,
             surfaceContainer = Palette.MintBg,
             surfaceContainerLow = Palette.MintBg,
             surfaceContainerHigh = Palette.MintBg,
-            onBackground = Palette.MintText,
-            onSurface = Palette.MintText,
+            onBackground = Palette.Black,
+            onSurface = Palette.Black,
         ),
         darkColors = lightColorScheme(
-            primary = Palette.MintText,
+            primary = Palette.Black,
             onPrimary = Palette.MintBg,
-            error = Palette.MintText,
+            error = Palette.Black,
             background = Palette.MintBg,
             surface = Palette.MintBg,
             surfaceVariant = Palette.MintTrack,
             surfaceContainer = Palette.MintBg,
             surfaceContainerLow = Palette.MintBg,
             surfaceContainerHigh = Palette.MintBg,
-            onBackground = Palette.MintText,
-            onSurface = Palette.MintText,
+            onBackground = Palette.Black,
+            onSurface = Palette.Black,
         ),
     ),
 
     AppTheme(
         id = "rose",
         label = "Rose",
-        timerTextColor = Palette.RoseText,
-        accentColor = Palette.RoseText,
+        timerTextColor = Palette.Black,
+        accentColor = Palette.Black,
         lightColors = lightColorScheme(
-            primary = Palette.RoseText,
+            primary = Palette.Black,
             onPrimary = Palette.RoseBg,
-            error = Palette.RoseText,
+            error = Palette.Black,
             background = Palette.RoseBg,
             surface = Palette.RoseBg,
             surfaceVariant = Palette.RoseTrack,
             surfaceContainer = Palette.RoseBg,
             surfaceContainerLow = Palette.RoseBg,
             surfaceContainerHigh = Palette.RoseBg,
-            onBackground = Palette.RoseText,
-            onSurface = Palette.RoseText,
+            onBackground = Palette.Black,
+            onSurface = Palette.Black,
         ),
         darkColors = lightColorScheme(
-            primary = Palette.RoseText,
+            primary = Palette.Black,
             onPrimary = Palette.RoseBg,
-            error = Palette.RoseText,
+            error = Palette.Black,
             background = Palette.RoseBg,
             surface = Palette.RoseBg,
             surfaceVariant = Palette.RoseTrack,
             surfaceContainer = Palette.RoseBg,
             surfaceContainerLow = Palette.RoseBg,
             surfaceContainerHigh = Palette.RoseBg,
-            onBackground = Palette.RoseText,
-            onSurface = Palette.RoseText,
-        ),
-    ),
-
-    AppTheme(
-        id = "algeria",
-        label = "Algeria",
-        timerTextColor = Palette.AlgeriaPrimary,
-        accentColor = Palette.AlgeriaPrimary,
-        labelColor = Palette.AlgeriaError,
-        lightColors = lightColorScheme(
-            primary = Palette.AlgeriaPrimary,
-            onPrimary = Color.White,
-            error = Palette.AlgeriaError,
-            background = Palette.AlgeriaBg,
-            surface = Palette.AlgeriaBg,
-            surfaceVariant = Palette.AlgeriaTrack,
-            surfaceContainer = Palette.AlgeriaBg,
-            surfaceContainerLow = Palette.AlgeriaBg,
-            surfaceContainerHigh = Palette.AlgeriaBg,
-            onBackground = Palette.AlgeriaPrimary,
-            onSurface = Palette.AlgeriaPrimary,
-        ),
-        darkColors = lightColorScheme(
-            primary = Palette.AlgeriaPrimary,
-            onPrimary = Color.White,
-            error = Palette.AlgeriaError,
-            background = Palette.AlgeriaBg,
-            surface = Palette.AlgeriaBg,
-            surfaceVariant = Palette.AlgeriaTrack,
-            surfaceContainer = Palette.AlgeriaBg,
-            surfaceContainerLow = Palette.AlgeriaBg,
-            surfaceContainerHigh = Palette.AlgeriaBg,
-            onBackground = Palette.AlgeriaPrimary,
-            onSurface = Palette.AlgeriaPrimary,
+            onBackground = Palette.Black,
+            onSurface = Palette.Black,
         ),
     ),
 )
 
-// Удобный доступ по id (используется при загрузке из DataStore)
 fun themeById(id: String): AppTheme = AppThemes.find { it.id == id } ?: AppThemes.first()
 
-// ─────────────────────────────────────────────────────────────────────────────
 // ШРИФТЫ — вынесены отдельно от тем
-// ─────────────────────────────────────────────────────────────────────────────
-
 private val FontDefault = FontFamily(
     Font(R.font.font_regular, FontWeight.Normal),
     Font(R.font.font_bold, FontWeight.Bold)
@@ -448,9 +355,16 @@ private val DotsFontFamily = FontFamily(
     Font(R.font.dots, FontWeight.Normal),
 )
 
+private val OswaldFontFamily = FontFamily(
+    Font(R.font.oswald_regular, FontWeight.Normal),
+    Font(R.font.oswald_medium, FontWeight.Bold)
+)
+
+
 private val SportFontFamily = FontFamily(
     Font(R.font.sport, FontWeight.Normal),
 )
+
 
 data class FontOption(
     val id: String,
@@ -460,9 +374,9 @@ data class FontOption(
 
 val AvailableFonts: List<FontOption> = listOf(
     FontOption("default", "Default", FontDefault),
-    FontOption("sport", "Sport", SportFontFamily),
+    FontOption("oswald", "Oswald", OswaldFontFamily),
     FontOption("dots", "Dots", DotsFontFamily),
-
-    )
+    FontOption("sport", "Sport", SportFontFamily),
+)
 
 fun fontById(id: String): FontOption = AvailableFonts.find { it.id == id } ?: AvailableFonts.first()

@@ -45,6 +45,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -272,7 +273,7 @@ fun TimerScreen(
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
     val timerTextColor = activeTheme.timerTextColor ?: MaterialTheme.colorScheme.onSurface
     val accentColor = activeTheme.accentColor ?: primaryColor
-    val labelColor = activeTheme.labelColor ?: primaryColor.copy(alpha = 0.5f)
+    val labelColor = activeTheme.labelColor ?: primaryColor.copy(alpha = 0.7f)
 
     // Автоматически обновляем цвет иконок статус-бара в зависимости от яркости фона
     UpdateStatusBar()
@@ -376,7 +377,7 @@ fun TimerScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp),
+                    .padding(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 if (isActive) {
@@ -392,7 +393,7 @@ fun TimerScreen(
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .height(72.dp),
+                            .height(84.dp),
                         containerColor = Color.Transparent,
                         contentColor = accentColor,
                         isOutlined = true
@@ -422,7 +423,7 @@ fun TimerScreen(
                     },
                     modifier = Modifier
                         .weight(2f)
-                        .height(72.dp),
+                        .height(84.dp),
                     containerColor = accentColor,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
@@ -518,7 +519,7 @@ private fun ColumnScope.IdleDisplay(
     labelColor: Color,
     onPickerOpen: (String) -> Unit
 ) {
-    Spacer(modifier = Modifier.weight(0.5f))
+    Spacer(modifier = Modifier.weight(0.3f))
     TimerValueDisplay(
         label = stringResource(R.string.work),
         value = formatTime(workSeconds),
@@ -528,7 +529,7 @@ private fun ColumnScope.IdleDisplay(
         labelColor = labelColor,
         onClick = { onPickerOpen("work") }
     )
-    Spacer(modifier = Modifier.height(40.dp))
+    Spacer(modifier = Modifier.height(30.dp))
     TimerValueDisplay(
         label = stringResource(R.string.rest),
         value = formatTime(restSeconds),
@@ -536,7 +537,7 @@ private fun ColumnScope.IdleDisplay(
         labelColor = labelColor,
         onClick = { onPickerOpen("rest") }
     )
-    Spacer(modifier = Modifier.height(40.dp))
+    Spacer(modifier = Modifier.height(30.dp))
     TimerValueDisplay(
         label = stringResource(R.string.repeats),
         value = "$repeats",
@@ -561,13 +562,13 @@ private fun ColumnScope.ActiveTimerDisplay(
     Spacer(modifier = Modifier.weight(0.5f))
     Box(contentAlignment = Alignment.Center, modifier = Modifier.size(320.dp)) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            drawCircle(color = trackColor, style = Stroke(width = 10.dp.toPx()))
+            drawCircle(color = trackColor, style = Stroke(width = 16.dp.toPx()))
             drawArc(
                 color = phaseColor,
                 startAngle = -90f,
                 sweepAngle = 360 * smoothProgress,
                 useCenter = false,
-                style = Stroke(width = 10.dp.toPx(), cap = StrokeCap.Round)
+                style = Stroke(width = 16.dp.toPx(), cap = StrokeCap.Round)
             )
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -689,7 +690,7 @@ fun AnimatedButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(if (isPressed) 0.95f else 1f, label = "scale")
-    val shape = RoundedCornerShape(36.dp)
+    val shape = CircleShape
 
     Box(
         modifier = modifier
@@ -800,7 +801,7 @@ fun FontSelector(
 fun TimerValueDisplay(
     label: String, value: String, labelFontSize: TextUnit = 20.sp, valueFontSize: TextUnit = 84.sp,
     valueColor: Color = MaterialTheme.colorScheme.onSurface,
-    labelColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+    labelColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
     onClick: () -> Unit
 ) {
     Column(
