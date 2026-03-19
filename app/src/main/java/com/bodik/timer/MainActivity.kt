@@ -279,7 +279,7 @@ fun TimerScreen(
 
     val smoothProgress = remember { Animatable(1f) }
     val primaryColor = MaterialTheme.colorScheme.primary
-    val errorColor = MaterialTheme.colorScheme.error
+    val errorColor = Color(0xFFE53935)
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
     val timerTextColor = activeTheme.timerTextColor ?: MaterialTheme.colorScheme.onSurface
     val accentColor = activeTheme.accentColor ?: primaryColor
@@ -411,7 +411,7 @@ fun TimerScreen(
                         Icon(
                             painter = painterResource(R.drawable.stop),
                             contentDescription = null,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(32.dp)
                         )
                     }
                 }
@@ -440,7 +440,7 @@ fun TimerScreen(
                     Icon(
                         painter = painterResource(if (timerState.isRunning) R.drawable.pause else R.drawable.play),
                         contentDescription = null,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(32.dp)
                     )
                 }
             }
@@ -488,33 +488,11 @@ fun TimerScreen(
                     .fillMaxWidth()
                     .padding(bottom = 48.dp)
             ) {
-                Text(
-                    text = "Themes",
-                    fontFamily = LocalFontFamily.current,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = accentColor,
-                    modifier = Modifier
-                        .padding(bottom = 20.dp)
-                        .padding(start = 16.dp)
-                )
                 ThemeSelector(
                     activeTheme = activeTheme,
                     onThemeChange = onThemeChange
                 )
-
                 Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    text = "Fonts",
-                    fontFamily = LocalFontFamily.current,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = accentColor,
-                    modifier = Modifier
-                        .padding(bottom = 20.dp)
-                        .padding(start = 16.dp)
-                )
                 FontSelector(
                     selectedFont = selectedFont,
                     onFontChange = onFontChange
@@ -838,7 +816,7 @@ fun TimerValueDisplay(
             text = value,
             fontFamily = LocalFontFamily.current,
             fontSize = valueFontSize,
-            fontWeight = FontWeight.Black,
+            fontWeight = FontWeight.Bold,
             color = valueColor
         )
     }
