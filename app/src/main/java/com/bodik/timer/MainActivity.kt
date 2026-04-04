@@ -33,6 +33,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -43,7 +45,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -710,21 +711,26 @@ fun AnimatedButton(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ThemeSelector(
     activeTheme: AppTheme,
     onThemeChange: (AppTheme) -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
-    LazyRow(
-        modifier = Modifier.fillMaxWidth(),
+
+    FlowRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(AppThemes) { theme ->
+        AppThemes.forEach { theme ->
             val isSelected = theme.id == activeTheme.id
             val themeColor = if (isDark) theme.darkColors.primary else theme.lightColors.primary
             val shape = RoundedCornerShape(50)
+
             Box(
                 modifier = Modifier
                     .clip(shape)
