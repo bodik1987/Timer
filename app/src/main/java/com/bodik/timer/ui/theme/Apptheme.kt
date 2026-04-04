@@ -275,6 +275,11 @@ private val OswaldFontFamily = FontFamily(
     Font(R.font.oswald_medium, FontWeight.Bold),
 )
 
+private val RubikFontFamily = FontFamily(
+    Font(R.font.rubik_regular, FontWeight.Normal),
+    Font(R.font.rubik_medium, FontWeight.Bold),
+)
+
 data class FontOption(
     val id: String,
     val label: String,
@@ -286,6 +291,7 @@ val AvailableFonts: List<FontOption> = listOf(
     FontOption("oswald", "Oswald", OswaldFontFamily),
     FontOption("logo", "Logo", RobotoFontDefault),
     FontOption("dots", "Dots", DotsFontFamily),
+    FontOption("rubik", "Rubik", RubikFontFamily),
 )
 
 fun fontById(id: String): FontOption = AvailableFonts.find { it.id == id } ?: AvailableFonts.first()
