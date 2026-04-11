@@ -91,6 +91,11 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.lifecycleScope
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.bodik.timer.ui.theme.AppTheme
 import com.bodik.timer.ui.theme.AppThemes
 import com.bodik.timer.ui.theme.AvailableFonts
@@ -284,7 +289,40 @@ fun TimerScreen(
     val timerTextColor = activeTheme.timerTextColor ?: MaterialTheme.colorScheme.onSurface
     val accentColor = activeTheme.accentColor ?: primaryColor
 
-    // Автоматически обновляем цвет иконок статус-бара в зависимости от яркости фона
+
+//    val lottieLading by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.loading))
+//    val progressLottieLading by animateLottieCompositionAsState(
+//        composition = lottieLading,
+//        iterations = LottieConstants.IterateForever,
+//        // Если хочешь, чтобы она крутилась ВСЕГДА (даже когда таймер стоит):
+//        isPlaying = true,
+//        // А здесь управляй скоростью: если таймер стоит — скорость 0.5, если идет — 1.0
+//        speed = if (timerState.isRunning) 1f else 0.5f
+//    )
+
+    val lottieRun by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.runs))
+    val progressLottieRun by animateLottieCompositionAsState(
+        composition = lottieRun,
+        iterations = LottieConstants.IterateForever,
+        isPlaying = true,
+        speed = if (timerState.isRunning) 1f else 0.5f
+    )
+
+    val lottiePause by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.pause))
+    val progressLottiePause by animateLottieCompositionAsState(
+        composition = lottiePause,
+        iterations = LottieConstants.IterateForever,
+        isPlaying = true,
+    )
+
+
+    val lottieRepeats by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.repeats))
+    val progressLottieRepeats by animateLottieCompositionAsState(
+        composition = lottieRepeats,
+        iterations = LottieConstants.IterateForever,
+        isPlaying = true,
+    )
+
     UpdateStatusBar()
 
     LaunchedEffect(Unit) {
@@ -359,17 +397,82 @@ fun TimerScreen(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (!isActive) {
-                IdleDisplay(
-                    workSeconds = setWorkSeconds.toInt(),
-                    restSeconds = setRestSeconds.toInt(),
-                    repeats = setRepeats.toInt(),
-                    timerTextColor = timerTextColor,
-                    onPickerOpen = { picker -> activePicker = picker; showSettingsSheet = true }
+            if (lottieRun != null) {
+                LottieAnimation(
+                    composition = lottieRun,
+                    progress = { progressLottieRun },
+                    modifier = Modifier.size(80.dp)
                 )
+            }
+            if (!isActive) {
+                Text(
+                    text = formatTime(setWorkSeconds.toInt()),
+                    fontFamily = LocalFontFamily.current,
+                    fontSize = 84.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = timerTextColor,
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {
+                                activePicker = "work"
+                                showSettingsSheet = true
+                            }
+                        )
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                if (lottiePause != null) {
+                    LottieAnimation(
+                        composition = lottiePause,
+                        progress = { progressLottiePause },
+                        modifier = Modifier.size(80.dp)
+                    )
+                }
+                Text(
+                    text = formatTime(setRestSeconds.toInt()),
+                    fontFamily = LocalFontFamily.current,
+                    fontSize = 84.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = timerTextColor,
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {
+                                activePicker = "repeats"
+                                showSettingsSheet = true
+                            }
+                        )
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                if (lottieRepeats != null) {
+                    LottieAnimation(
+                        composition = lottieRepeats,
+                        progress = { progressLottieRepeats },
+                        modifier = Modifier.size(50.dp)
+                    )
+                }
+                Text(
+                    text = "${setRepeats.toInt()}",
+                    fontFamily = LocalFontFamily.current,
+                    fontSize = 84.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = timerTextColor,
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {
+                                activePicker = "repeats"
+                                showSettingsSheet = true
+                            }
+                        )
+                )
+                Spacer(modifier = Modifier.weight(1f))
             } else {
                 ActiveTimerDisplay(
                     timerState = timerState,
@@ -380,7 +483,6 @@ fun TimerScreen(
                     timerTextColor = timerTextColor,
                 )
             }
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -501,76 +603,6 @@ fun TimerScreen(
 
 // ─── UI Sub-components (Idle, Active, Settings, etc) ──────────────────────────
 
-@Composable
-private fun ColumnScope.IdleDisplay(
-    workSeconds: Int,
-    restSeconds: Int,
-    repeats: Int,
-    timerTextColor: Color,
-    onPickerOpen: (String) -> Unit
-) {
-    Spacer(modifier = Modifier.weight(0.3f))
-    Icon(
-        painter = painterResource(R.drawable.play),
-        contentDescription = null,
-        modifier = Modifier.size(32.dp)
-    )
-    Text(
-        text = formatTime(workSeconds),
-        fontFamily = LocalFontFamily.current,
-        fontSize = 94.sp,
-        fontWeight = FontWeight.Bold,
-        color = timerTextColor,
-        modifier = Modifier
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = { onPickerOpen("work") }
-            )
-            .padding(8.dp)
-    )
-    Spacer(modifier = Modifier.height(30.dp))
-    Icon(
-        painter = painterResource(R.drawable.pause),
-        contentDescription = null,
-        modifier = Modifier.size(32.dp)
-    )
-    Text(
-        text = formatTime(restSeconds),
-        fontFamily = LocalFontFamily.current,
-        fontSize = 94.sp,
-        fontWeight = FontWeight.Bold,
-        color = timerTextColor,
-        modifier = Modifier
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = { onPickerOpen("repeats") }
-            )
-            .padding(8.dp)
-    )
-    Spacer(modifier = Modifier.height(30.dp))
-    Icon(
-        painter = painterResource(R.drawable.repeat),
-        contentDescription = null,
-        modifier = Modifier.size(34.dp)
-    )
-    Text(
-        text = "$repeats",
-        fontFamily = LocalFontFamily.current,
-        fontSize = 94.sp,
-        fontWeight = FontWeight.Bold,
-        color = timerTextColor,
-        modifier = Modifier
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = { onPickerOpen("repeats") }
-            )
-            .padding(8.dp)
-    )
-    Spacer(modifier = Modifier.weight(1f))
-}
 
 @Composable
 private fun ColumnScope.ActiveTimerDisplay(
@@ -816,3 +848,4 @@ fun FontSelector(
         }
     }
 }
+

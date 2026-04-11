@@ -262,10 +262,6 @@ private val FontDefault = FontFamily(
     Font(R.font.font_bold, FontWeight.Bold),
 )
 
-private val RobotoFontDefault = FontFamily(
-    Font(R.font.flex, FontWeight.Normal),
-)
-
 private val DotsFontFamily = FontFamily(
     Font(R.font.dots, FontWeight.Normal),
 )
@@ -289,7 +285,6 @@ data class FontOption(
 val AvailableFonts: List<FontOption> = listOf(
     FontOption("1", "1", FontDefault),
     FontOption("2", "2", OswaldFontFamily),
-    FontOption("3", "3", RobotoFontDefault),
     FontOption("4", "4", DotsFontFamily),
     FontOption("5", "5", MonoFontFamily),
 )
