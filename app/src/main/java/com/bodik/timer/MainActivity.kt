@@ -83,7 +83,6 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
@@ -284,7 +283,6 @@ fun TimerScreen(
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
     val timerTextColor = activeTheme.timerTextColor ?: MaterialTheme.colorScheme.onSurface
     val accentColor = activeTheme.accentColor ?: primaryColor
-    val labelColor = activeTheme.labelColor ?: primaryColor.copy(alpha = 0.7f)
 
     // Автоматически обновляем цвет иконок статус-бара в зависимости от яркости фона
     UpdateStatusBar()
@@ -370,7 +368,6 @@ fun TimerScreen(
                     restSeconds = setRestSeconds.toInt(),
                     repeats = setRepeats.toInt(),
                     timerTextColor = timerTextColor,
-                    labelColor = labelColor,
                     onPickerOpen = { picker -> activePicker = picker; showSettingsSheet = true }
                 )
             } else {
@@ -381,7 +378,6 @@ fun TimerScreen(
                     errorColor = errorColor,
                     trackColor = trackColor,
                     timerTextColor = timerTextColor,
-                    labelColor = labelColor,
                 )
             }
 
@@ -511,34 +507,67 @@ private fun ColumnScope.IdleDisplay(
     restSeconds: Int,
     repeats: Int,
     timerTextColor: Color,
-    labelColor: Color,
     onPickerOpen: (String) -> Unit
 ) {
     Spacer(modifier = Modifier.weight(0.3f))
-    TimerValueDisplay(
-        label = stringResource(R.string.work),
-        value = formatTime(workSeconds),
-        labelFontSize = 24.sp,
-        valueFontSize = 94.sp,
-        valueColor = timerTextColor,
-        labelColor = labelColor,
-        onClick = { onPickerOpen("work") }
+    Icon(
+        painter = painterResource(R.drawable.play),
+        contentDescription = null,
+        modifier = Modifier.size(32.dp)
+    )
+    Text(
+        text = formatTime(workSeconds),
+        fontFamily = LocalFontFamily.current,
+        fontSize = 94.sp,
+        fontWeight = FontWeight.Bold,
+        color = timerTextColor,
+        modifier = Modifier
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = { onPickerOpen("work") }
+            )
+            .padding(8.dp)
     )
     Spacer(modifier = Modifier.height(30.dp))
-    TimerValueDisplay(
-        label = stringResource(R.string.rest),
-        value = formatTime(restSeconds),
-        valueColor = timerTextColor,
-        labelColor = labelColor,
-        onClick = { onPickerOpen("rest") }
+    Icon(
+        painter = painterResource(R.drawable.pause),
+        contentDescription = null,
+        modifier = Modifier.size(32.dp)
+    )
+    Text(
+        text = formatTime(restSeconds),
+        fontFamily = LocalFontFamily.current,
+        fontSize = 94.sp,
+        fontWeight = FontWeight.Bold,
+        color = timerTextColor,
+        modifier = Modifier
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = { onPickerOpen("repeats") }
+            )
+            .padding(8.dp)
     )
     Spacer(modifier = Modifier.height(30.dp))
-    TimerValueDisplay(
-        label = stringResource(R.string.repeats),
-        value = "$repeats",
-        valueColor = timerTextColor,
-        labelColor = labelColor,
-        onClick = { onPickerOpen("repeats") }
+    Icon(
+        painter = painterResource(R.drawable.repeat),
+        contentDescription = null,
+        modifier = Modifier.size(34.dp)
+    )
+    Text(
+        text = "$repeats",
+        fontFamily = LocalFontFamily.current,
+        fontSize = 94.sp,
+        fontWeight = FontWeight.Bold,
+        color = timerTextColor,
+        modifier = Modifier
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = { onPickerOpen("repeats") }
+            )
+            .padding(8.dp)
     )
     Spacer(modifier = Modifier.weight(1f))
 }
@@ -551,7 +580,6 @@ private fun ColumnScope.ActiveTimerDisplay(
     errorColor: Color,
     trackColor: Color,
     timerTextColor: Color,
-    labelColor: Color,
 ) {
     val phaseColor = if (timerState.isWorkPhase) accentColor else errorColor
     Spacer(modifier = Modifier.weight(0.5f))
@@ -566,14 +594,10 @@ private fun ColumnScope.ActiveTimerDisplay(
             gapSize = 4.dp
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = if (timerState.isWorkPhase) stringResource(R.string.work).uppercase() else stringResource(
-                    R.string.rest
-                ).uppercase(),
-                fontFamily = LocalFontFamily.current,
-                fontSize = 20.sp,
-                color = labelColor,
-                fontWeight = FontWeight.Bold
+            Icon(
+                painter = painterResource(if (timerState.isWorkPhase) R.drawable.play else R.drawable.pause),
+                contentDescription = null,
+                modifier = Modifier.size(32.dp)
             )
             Text(
                 text = formatTime(timerState.timeLeft),
@@ -612,11 +636,11 @@ private fun SettingsPicker(
 ) {
     val isWork = activePicker == "work"
     val isRepeats = activePicker == "repeats"
-    val title = when (activePicker) {
-        "work" -> stringResource(R.string.work)
-        "rest" -> stringResource(R.string.rest)
-        else -> stringResource(R.string.repeats)
-    }.uppercase()
+    val icon = when (activePicker) {
+        "work" -> painterResource(R.drawable.play)
+        "rest" -> painterResource(R.drawable.pause)
+        else -> painterResource(R.drawable.repeat)
+    }
 
     Column(
         modifier = Modifier
@@ -624,11 +648,10 @@ private fun SettingsPicker(
             .padding(bottom = 64.dp, start = 32.dp, end = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            title,
-            fontFamily = LocalFontFamily.current,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
+        Icon(
+            painter = icon,
+            contentDescription = null,
+            modifier = Modifier.size(32.dp)
         )
         Spacer(modifier = Modifier.height(24.dp))
         if (isRepeats) {
@@ -791,39 +814,5 @@ fun FontSelector(
                     ) { onFontChange(font) }
             )
         }
-    }
-}
-
-@Composable
-fun TimerValueDisplay(
-    label: String, value: String, labelFontSize: TextUnit = 20.sp, valueFontSize: TextUnit = 84.sp,
-    valueColor: Color = MaterialTheme.colorScheme.onSurface,
-    labelColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-    onClick: () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            )
-            .padding(8.dp)
-    ) {
-        Text(
-            text = label.uppercase(),
-            fontFamily = LocalFontFamily.current,
-            color = labelColor,
-            fontSize = labelFontSize,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = value,
-            fontFamily = LocalFontFamily.current,
-            fontSize = valueFontSize,
-            fontWeight = FontWeight.Bold,
-            color = valueColor
-        )
     }
 }

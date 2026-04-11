@@ -130,7 +130,7 @@ val AppThemes: List<AppTheme> = listOf(
 
     AppTheme(
         id = "default",
-        label = "Default",
+        label = "1",
         lightColors = lightColorScheme(primary = Color(0xFF4E5E8B)),
         darkColors = darkColorScheme(primary = Palette.Purple80),
     ),
@@ -138,7 +138,7 @@ val AppThemes: List<AppTheme> = listOf(
     // Neon — тёмная по умолчанию, light == dark
     fixedTheme(
         id = "neon",
-        label = "Neon",
+        label = "2",
         timerTextColor = Palette.NeonAccent,
         accentColor = Palette.NeonAccent,
         labelColor = Palette.NeonAccent,
@@ -147,7 +147,7 @@ val AppThemes: List<AppTheme> = listOf(
 
     fixedTheme(
         id = "neonGreen",
-        label = "Neon Green",
+        label = "3",
         timerTextColor = Palette.NeonGreenAccent,
         accentColor = Palette.NeonGreenAccent,
         labelColor = Palette.NeonGreenAccent,
@@ -161,7 +161,7 @@ val AppThemes: List<AppTheme> = listOf(
 
     fixedTheme(
         id = "taxi",
-        label = "Taxi",
+        label = "4",
         timerTextColor = Palette.Black,
         accentColor = Palette.Black,
         labelColor = Palette.Black,
@@ -175,7 +175,7 @@ val AppThemes: List<AppTheme> = listOf(
 
     fixedTheme(
         id = "dhl",
-        label = "DHL",
+        label = "5",
         timerTextColor = Palette.DHLAccent,
         accentColor = Palette.DHLAccent,
         labelColor = Palette.DHLAccent,
@@ -189,7 +189,7 @@ val AppThemes: List<AppTheme> = listOf(
 
     fixedTheme(
         id = "lemon",
-        label = "Lemon",
+        label = "6",
         timerTextColor = Palette.Black,
         accentColor = Palette.Black,
         colors = solidLightScheme(
@@ -202,7 +202,7 @@ val AppThemes: List<AppTheme> = listOf(
 
     fixedTheme(
         id = "fire",
-        label = "Fire",
+        label = "7",
         timerTextColor = Palette.Black,
         accentColor = Palette.Black,
         labelColor = Palette.Black,
@@ -217,7 +217,7 @@ val AppThemes: List<AppTheme> = listOf(
     // Watch — отдельный случай: surfaceContainer отличается от background
     fixedTheme(
         id = "watch",
-        label = "Watch",
+        label = "8",
         timerTextColor = Palette.WatchText,
         accentColor = Palette.WatchAccent,
         labelColor = Palette.WatchAccent,
@@ -238,7 +238,7 @@ val AppThemes: List<AppTheme> = listOf(
 
     fixedTheme(
         id = "mint",
-        label = "Mint",
+        label = "9",
         timerTextColor = Palette.Black,
         accentColor = Palette.Black,
         colors = solidLightScheme(Palette.Black, Palette.MintBg, Palette.MintTrack),
@@ -246,7 +246,7 @@ val AppThemes: List<AppTheme> = listOf(
 
     fixedTheme(
         id = "rose",
-        label = "Rose",
+        label = "10",
         timerTextColor = Palette.Black,
         accentColor = Palette.Black,
         colors = solidLightScheme(Palette.Black, Palette.RoseBg, Palette.RoseTrack),
@@ -263,7 +263,7 @@ private val FontDefault = FontFamily(
 )
 
 private val RobotoFontDefault = FontFamily(
-    Font(R.font.roboto_flex_logo, FontWeight.Normal),
+    Font(R.font.flex, FontWeight.Normal),
 )
 
 private val DotsFontFamily = FontFamily(
@@ -287,11 +287,11 @@ data class FontOption(
 )
 
 val AvailableFonts: List<FontOption> = listOf(
-    FontOption("default", "Default", FontDefault),
-    FontOption("oswald", "Oswald", OswaldFontFamily),
-    FontOption("logo", "Logo", RobotoFontDefault),
-    FontOption("dots", "Dots", DotsFontFamily),
-    FontOption("mono", "Mono", MonoFontFamily),
+    FontOption("1", "1", FontDefault),
+    FontOption("2", "2", OswaldFontFamily),
+    FontOption("3", "3", RobotoFontDefault),
+    FontOption("4", "4", DotsFontFamily),
+    FontOption("5", "5", MonoFontFamily),
 )
 
 fun fontById(id: String): FontOption = AvailableFonts.find { it.id == id } ?: AvailableFonts.first()
