@@ -19,15 +19,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,8 +33,6 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -47,7 +42,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -56,14 +50,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
@@ -77,7 +69,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -408,7 +399,18 @@ fun TimerScreen(
                 LottieAnimation(
                     composition = if (timerState.isWorkPhase) lottieRun else lottiePause,
                     progress = { progressLottieRun },
-                    modifier = Modifier.size(200.dp)
+                    modifier = Modifier
+                        .size(200.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {
+                                if (!isActive) {
+                                    activePicker = "work"
+                                    showSettingsSheet = true
+                                }
+                            }
+                        )
                 )
             }
             if (!isActive) {
@@ -433,7 +435,16 @@ fun TimerScreen(
                     LottieAnimation(
                         composition = lottiePause,
                         progress = { progressLottiePause },
-                        modifier = Modifier.size(100.dp)
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = {
+                                    activePicker = "rest"
+                                    showSettingsSheet = true
+                                }
+                            )
                     )
                 }
                 Text(
@@ -447,7 +458,7 @@ fun TimerScreen(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             onClick = {
-                                activePicker = "repeats"
+                                activePicker = "rest"
                                 showSettingsSheet = true
                             }
                         )
@@ -457,7 +468,16 @@ fun TimerScreen(
                     LottieAnimation(
                         composition = lottieRepeats,
                         progress = { progressLottieRepeats },
-                        modifier = Modifier.size(50.dp)
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = {
+                                    activePicker = "repeats"
+                                    showSettingsSheet = true
+                                }
+                            )
                     )
                 }
                 Text(
@@ -556,7 +576,6 @@ fun TimerScreen(
         }
     }
 
-    // --- Bottom Sheet: Настройки времени ---
     if (showSettingsSheet) {
         ModalBottomSheet(
             onDismissRequest = {
@@ -568,7 +587,8 @@ fun TimerScreen(
                         it[REPEATS_KEY] = setRepeats
                     }
                 }
-            }
+            },
+            dragHandle = null
         ) {
             SettingsPicker(
                 activePicker = activePicker,
@@ -589,12 +609,13 @@ fun TimerScreen(
             onDismissRequest = { showThemeSheet = false },
             containerColor = Color.White, // Цвет фона самой шторки
             scrimColor = Color.Transparent, // Цвет затемнения фона (прозрачность)
-            contentColor = Color.Black // Цвет контента по умолчанию (текст, иконки)
+            contentColor = Color.Black, // Цвет контента по умолчанию (текст, иконки)
+            dragHandle = null
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 48.dp)
+                    .padding(vertical = 32.dp, horizontal = 16.dp)
             ) {
                 ThemeSelector(
                     activeTheme = activeTheme,
@@ -609,9 +630,6 @@ fun TimerScreen(
         }
     }
 }
-
-// ─── UI Sub-components (Idle, Active, Settings, etc) ──────────────────────────
-
 
 @Composable
 private fun ColumnScope.ActiveTimerDisplay(
@@ -672,24 +690,12 @@ private fun SettingsPicker(
 ) {
     val isWork = activePicker == "work"
     val isRepeats = activePicker == "repeats"
-    val icon = when (activePicker) {
-        "work" -> painterResource(R.drawable.play)
-        "rest" -> painterResource(R.drawable.pause)
-        else -> painterResource(R.drawable.repeat)
-    }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 64.dp, start = 32.dp, end = 32.dp),
+            .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(
-            painter = icon,
-            contentDescription = null,
-            modifier = Modifier.size(32.dp)
-        )
-        Spacer(modifier = Modifier.height(24.dp))
         if (isRepeats) {
             Slider(
                 value = repeats,
@@ -724,47 +730,6 @@ private fun SettingsPicker(
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Bold,
                 color = primaryColor
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun AnimatedButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    containerColor: Color,
-    contentColor: Color,
-    isOutlined: Boolean = false,
-    onLongClick: (() -> Unit)? = null,
-    content: @Composable RowScope.() -> Unit
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (isPressed) 0.95f else 1f, label = "scale")
-    val shape = CircleShape
-
-    Box(
-        modifier = modifier
-            .graphicsLayer(scaleX = scale, scaleY = scale)
-            .then(if (isOutlined) Modifier.border(1.5.dp, contentColor, shape) else Modifier)
-            .clip(shape)
-            .background(containerColor)
-            .combinedClickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick,
-                onLongClick = onLongClick
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        CompositionLocalProvider(LocalContentColor provides contentColor) {
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-                content = content
             )
         }
     }
