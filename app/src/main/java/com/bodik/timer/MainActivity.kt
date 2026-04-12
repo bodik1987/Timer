@@ -463,7 +463,7 @@ fun TimerScreen(
                             }
                         )
                 )
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(20.dp))
                 if (lottieRepeats != null) {
                     LottieAnimation(
                         composition = lottieRepeats,
@@ -509,6 +509,8 @@ fun TimerScreen(
             }
 
             val onPrimary = MaterialTheme.colorScheme.onPrimary
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             if (!isActive) {
                 IslandButtonRow(
@@ -572,7 +574,6 @@ fun TimerScreen(
                     }
                 )
             }
-            Spacer(modifier = Modifier.height(10.dp))
         }
     }
 
@@ -697,6 +698,14 @@ private fun SettingsPicker(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (isRepeats) {
+            Text(
+                "${repeats.toInt()}",
+                fontFamily = LocalFontFamily.current,
+                fontSize = 50.sp,
+                fontWeight = FontWeight.Bold,
+                color = primaryColor
+            )
+            Spacer(modifier = Modifier.height(24.dp))
             Slider(
                 value = repeats,
                 onValueChange = { onRepeatsChange(it.roundToInt().toFloat()) },
@@ -704,17 +713,19 @@ private fun SettingsPicker(
                 steps = 19
             )
             Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                "${repeats.toInt()}",
-                fontFamily = LocalFontFamily.current,
-                fontSize = 48.sp,
-                fontWeight = FontWeight.Bold,
-                color = primaryColor
-            )
+
         } else {
             val step = if (isWork) 30f else 10f
             val range = if (isWork) 30f..1800f else 0f..300f
             val current = if (isWork) workSeconds else restSeconds
+            Text(
+                formatTime(current.toInt()),
+                fontFamily = LocalFontFamily.current,
+                fontSize = 50.sp,
+                fontWeight = FontWeight.Bold,
+                color = primaryColor
+            )
+            Spacer(modifier = Modifier.height(24.dp))
             Slider(
                 value = current,
                 onValueChange = { raw ->
@@ -724,13 +735,6 @@ private fun SettingsPicker(
                 valueRange = range
             )
             Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                formatTime(current.toInt()),
-                fontFamily = LocalFontFamily.current,
-                fontSize = 48.sp,
-                fontWeight = FontWeight.Bold,
-                color = primaryColor
-            )
         }
     }
 }
