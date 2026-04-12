@@ -404,7 +404,7 @@ fun TimerScreen(
                 LottieAnimation(
                     composition = lottieRun,
                     progress = { progressLottieRun },
-                    modifier = Modifier.size(100.dp)
+                    modifier = Modifier.size(120.dp)
                 )
             }
             if (!isActive) {
@@ -424,7 +424,7 @@ fun TimerScreen(
                             }
                         )
                 )
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(30.dp))
                 if (lottiePause != null) {
                     LottieAnimation(
                         composition = lottiePause,
@@ -448,7 +448,7 @@ fun TimerScreen(
                             }
                         )
                 )
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 if (lottieRepeats != null) {
                     LottieAnimation(
                         composition = lottieRepeats,
