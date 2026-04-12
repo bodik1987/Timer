@@ -37,7 +37,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
@@ -70,11 +69,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
@@ -247,6 +249,47 @@ private fun UpdateStatusBar() {
     }
 }
 
+// ─── Adaptive size helpers ────────────────────────────────────────────────────
+
+private data class AdaptiveSizes(
+    val lottieMainSize: Dp,
+    val lottieSecondarySize: Dp,
+    val lottieRepeatsSize: Dp,
+    val progressCircleSize: Dp,
+    val fontWorkSize: TextUnit,
+    val fontRestSize: TextUnit,
+    val fontRepeatsSize: TextUnit,
+    val fontTimerSize: TextUnit,
+    val fontRoundSize: TextUnit,
+    val spacerSmall: Dp,
+    val spacerMedium: Dp,
+)
+
+@SuppressLint("ConfigurationScreenWidthHeight")
+@Composable
+private fun rememberAdaptiveSizes(): AdaptiveSizes {
+    val configuration = LocalConfiguration.current
+    val screenHeightDp = configuration.screenHeightDp
+    val screenWidthDp = configuration.screenWidthDp
+
+    val h = screenHeightDp.dp
+    val w = screenWidthDp.dp
+
+    return AdaptiveSizes(
+        lottieMainSize = (h * 0.22f).coerceIn(100.dp, 220.dp),
+        lottieSecondarySize = (h * 0.10f).coerceIn(60.dp, 110.dp),
+        lottieRepeatsSize = (h * 0.05f).coerceIn(32.dp, 56.dp),
+        progressCircleSize = (w * 0.72f).coerceIn(180.dp, 340.dp),
+        fontWorkSize = (screenHeightDp * 0.10f).coerceIn(36f, 88f).sp,
+        fontRestSize = (screenHeightDp * 0.09f).coerceIn(32f, 76f).sp,
+        fontRepeatsSize = (screenHeightDp * 0.08f).coerceIn(28f, 66f).sp,
+        fontTimerSize = (screenHeightDp * 0.10f).coerceIn(36f, 88f).sp,
+        fontRoundSize = (screenHeightDp * 0.038f).coerceIn(18f, 36f).sp,
+        spacerSmall = (h * 0.018f).coerceIn(8.dp, 20.dp),
+        spacerMedium = (h * 0.025f).coerceIn(12.dp, 28.dp),
+    )
+}
+
 // ─── TimerScreen ──────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -266,6 +309,8 @@ fun TimerScreen(
     val scope = rememberCoroutineScope()
     val timerState by serviceState.collectAsState()
 
+    val sizes = rememberAdaptiveSizes()
+
     var setWorkSeconds by remember { mutableStateOf(120f) }
     var setRestSeconds by remember { mutableStateOf(30f) }
     var setRepeats by remember { mutableStateOf(10f) }
@@ -280,17 +325,6 @@ fun TimerScreen(
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
     val timerTextColor = activeTheme.timerTextColor ?: MaterialTheme.colorScheme.onSurface
     val accentColor = activeTheme.accentColor ?: primaryColor
-
-
-//    val lottieLading by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.loading))
-//    val progressLottieLading by animateLottieCompositionAsState(
-//        composition = lottieLading,
-//        iterations = LottieConstants.IterateForever,
-//        // Если хочешь, чтобы она крутилась ВСЕГДА (даже когда таймер стоит):
-//        isPlaying = true,
-//        // А здесь управляй скоростью: если таймер стоит — скорость 0.5, если идет — 1.0
-//        speed = if (timerState.isRunning) 1f else 0.5f
-//    )
 
     val lottieRun by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.runs))
     val progressLottieRun by animateLottieCompositionAsState(
@@ -307,7 +341,6 @@ fun TimerScreen(
         isPlaying = true,
         speed = 0.6f
     )
-
 
     val lottieRepeats by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.repeats))
     val progressLottieRepeats by animateLottieCompositionAsState(
@@ -391,8 +424,7 @@ fun TimerScreen(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
-                .padding(bottom = 16.dp)
-                .offset(y = (-40).dp),
+                .padding(bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (lottieRun != null) {
@@ -400,7 +432,7 @@ fun TimerScreen(
                     composition = if (timerState.isWorkPhase) lottieRun else lottiePause,
                     progress = { progressLottieRun },
                     modifier = Modifier
-                        .size(200.dp)
+                        .size(sizes.lottieMainSize)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -413,11 +445,12 @@ fun TimerScreen(
                         )
                 )
             }
+
             if (!isActive) {
                 Text(
                     text = formatTime(setWorkSeconds.toInt()),
                     fontFamily = LocalFontFamily.current,
-                    fontSize = 84.sp,
+                    fontSize = sizes.fontWorkSize,
                     fontWeight = FontWeight.Bold,
                     color = timerTextColor,
                     modifier = Modifier
@@ -430,13 +463,13 @@ fun TimerScreen(
                             }
                         )
                 )
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(sizes.spacerSmall))
                 if (lottiePause != null) {
                     LottieAnimation(
                         composition = lottiePause,
                         progress = { progressLottiePause },
                         modifier = Modifier
-                            .size(100.dp)
+                            .size(sizes.lottieSecondarySize)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
@@ -450,7 +483,7 @@ fun TimerScreen(
                 Text(
                     text = formatTime(setRestSeconds.toInt()),
                     fontFamily = LocalFontFamily.current,
-                    fontSize = 74.sp,
+                    fontSize = sizes.fontRestSize,
                     fontWeight = FontWeight.Bold,
                     color = timerTextColor,
                     modifier = Modifier
@@ -463,13 +496,13 @@ fun TimerScreen(
                             }
                         )
                 )
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(sizes.spacerSmall))
                 if (lottieRepeats != null) {
                     LottieAnimation(
                         composition = lottieRepeats,
                         progress = { progressLottieRepeats },
                         modifier = Modifier
-                            .size(50.dp)
+                            .size(sizes.lottieRepeatsSize)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
@@ -483,7 +516,7 @@ fun TimerScreen(
                 Text(
                     text = "${setRepeats.toInt()}",
                     fontFamily = LocalFontFamily.current,
-                    fontSize = 64.sp,
+                    fontSize = sizes.fontRepeatsSize,
                     fontWeight = FontWeight.Bold,
                     color = timerTextColor,
                     modifier = Modifier
@@ -505,12 +538,16 @@ fun TimerScreen(
                     errorColor = errorColor,
                     trackColor = trackColor,
                     timerTextColor = timerTextColor,
+                    circleSize = sizes.progressCircleSize,
+                    fontTimerSize = sizes.fontTimerSize,
+                    fontRoundSize = sizes.fontRoundSize,
+                    spacerMedium = sizes.spacerMedium,
                 )
             }
 
             val onPrimary = MaterialTheme.colorScheme.onPrimary
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(sizes.spacerMedium))
 
             if (!isActive) {
                 IslandButtonRow(
@@ -604,13 +641,12 @@ fun TimerScreen(
         }
     }
 
-    // --- Bottom Sheet: Выбор темы и шрифта ---
     if (showThemeSheet) {
         ModalBottomSheet(
             onDismissRequest = { showThemeSheet = false },
-            containerColor = Color.White, // Цвет фона самой шторки
-            scrimColor = Color.Transparent, // Цвет затемнения фона (прозрачность)
-            contentColor = Color.Black, // Цвет контента по умолчанию (текст, иконки)
+            containerColor = Color.White,
+            scrimColor = Color.Transparent,
+            contentColor = Color.Black,
             dragHandle = null
         ) {
             Column(
@@ -632,6 +668,8 @@ fun TimerScreen(
     }
 }
 
+// ─── ActiveTimerDisplay ───────────────────────────────────────────────────────
+
 @Composable
 private fun ColumnScope.ActiveTimerDisplay(
     timerState: TimerState,
@@ -640,10 +678,14 @@ private fun ColumnScope.ActiveTimerDisplay(
     errorColor: Color,
     trackColor: Color,
     timerTextColor: Color,
+    circleSize: Dp,
+    fontTimerSize: TextUnit,
+    fontRoundSize: TextUnit,
+    spacerMedium: Dp,
 ) {
     val phaseColor = if (timerState.isWorkPhase) accentColor else errorColor
     Spacer(modifier = Modifier.weight(0.5f))
-    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(320.dp)) {
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(circleSize)) {
         CircularProgressIndicator(
             progress = { smoothProgress },
             modifier = Modifier.fillMaxSize(),
@@ -657,11 +699,11 @@ private fun ColumnScope.ActiveTimerDisplay(
             Text(
                 text = formatTime(timerState.timeLeft),
                 fontFamily = LocalFontFamily.current,
-                fontSize = 84.sp,
+                fontSize = fontTimerSize,
                 fontWeight = FontWeight.Black,
                 color = timerTextColor
             )
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(spacerMedium))
             Text(
                 text = stringResource(
                     R.string.round,
@@ -669,7 +711,7 @@ private fun ColumnScope.ActiveTimerDisplay(
                     timerState.totalRepeats
                 ),
                 fontFamily = LocalFontFamily.current,
-                fontSize = 34.sp,
+                fontSize = fontRoundSize,
                 color = accentColor,
                 fontWeight = FontWeight.Bold
             )
@@ -677,6 +719,8 @@ private fun ColumnScope.ActiveTimerDisplay(
     }
     Spacer(modifier = Modifier.weight(1f))
 }
+
+// ─── SettingsPicker ───────────────────────────────────────────────────────────
 
 @Composable
 private fun SettingsPicker(
@@ -713,7 +757,6 @@ private fun SettingsPicker(
                 steps = 19
             )
             Spacer(modifier = Modifier.height(24.dp))
-
         } else {
             val step = if (isWork) 30f else 10f
             val range = if (isWork) 30f..1800f else 0f..300f
@@ -738,6 +781,8 @@ private fun SettingsPicker(
         }
     }
 }
+
+// ─── ThemeSelector ────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -783,6 +828,8 @@ fun ThemeSelector(
     }
 }
 
+// ─── FontSelector ─────────────────────────────────────────────────────────────
+
 @Composable
 fun FontSelector(
     selectedFont: FontOption,
@@ -821,4 +868,3 @@ fun FontSelector(
         }
     }
 }
-
