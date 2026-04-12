@@ -404,7 +404,7 @@ fun TimerScreen(
                 LottieAnimation(
                     composition = lottieRun,
                     progress = { progressLottieRun },
-                    modifier = Modifier.size(80.dp)
+                    modifier = Modifier.size(100.dp)
                 )
             }
             if (!isActive) {
@@ -483,65 +483,69 @@ fun TimerScreen(
                     timerTextColor = timerTextColor,
                 )
             }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                if (isActive) {
-                    AnimatedButton(
-                        onClick = {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) vibrate(
-                                context
-                            )
-                        },
-                        onLongClick = {
-                            onStop()
-                            scope.launch { smoothProgress.snapTo(1f) }
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(84.dp),
-                        containerColor = Color.Transparent,
-                        contentColor = accentColor,
-                        isOutlined = true
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.stop),
-                            contentDescription = null,
-                            modifier = Modifier.size(32.dp)
+
+            val onPrimary = MaterialTheme.colorScheme.onPrimary
+
+            if (!isActive) {
+                IslandButtonRow(
+                    buttons = listOf(
+                        IslandButton(
+                            icon = painterResource(R.drawable.play),
+                            shape = ButtonShape.WIDE,
+                            containerColor = accentColor,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ),
+                    onTap = {
+                        onStart(
+                            setWorkSeconds.toInt(),
+                            setRestSeconds.toInt(),
+                            setRepeats.toInt()
                         )
                     }
-                }
-                AnimatedButton(
-                    onClick = {
-                        when {
-                            !isActive -> onStart(
-                                setWorkSeconds.toInt(),
-                                setRestSeconds.toInt(),
-                                setRepeats.toInt()
-                            )
-
-                            timerState.isRunning -> {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) vibrate(context); onPause()
+                )
+            } else {
+                IslandButtonRow(
+                    buttons = listOf(
+                        IslandButton(
+                            icon = painterResource(R.drawable.stop),
+                            shape = ButtonShape.NARROW,
+                            containerColor = Color.Transparent,
+                            contentColor = accentColor,
+                            isOutlined = true
+                        ),
+                        IslandButton(
+                            icon = painterResource(if (timerState.isRunning) R.drawable.pause else R.drawable.play),
+                            shape = ButtonShape.WIDE,
+                            containerColor = accentColor,
+                            contentColor = onPrimary
+                        )
+                    ),
+                    onTap = { index ->
+                        when (index) {
+                            0 -> {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) vibrate(context)
                             }
 
-                            else -> onResume()
+                            1 -> {
+                                if (timerState.isRunning) {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) vibrate(
+                                        context
+                                    )
+                                    onPause()
+                                } else {
+                                    onResume()
+                                }
+                            }
                         }
                     },
-                    modifier = Modifier
-                        .weight(2f)
-                        .height(84.dp),
-                    containerColor = accentColor,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ) {
-                    Icon(
-                        painter = painterResource(if (timerState.isRunning) R.drawable.pause else R.drawable.play),
-                        contentDescription = null,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
+                    onLongPress = { index ->
+                        if (index == 0) {
+                            onStop()
+                            scope.launch { smoothProgress.snapTo(1f) }
+                        }
+                    }
+                )
             }
             Spacer(modifier = Modifier.height(40.dp))
         }

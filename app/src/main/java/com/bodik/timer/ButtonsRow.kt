@@ -6,6 +6,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.PressGestureScope
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.indication
@@ -17,9 +18,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -28,25 +29,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 
 enum class ButtonShape { WIDE, CIRCLE, NARROW }
 
 data class IslandButton(
-    val icon: String,
-    val shape: ButtonShape = ButtonShape.WIDE
+    val icon: Painter,
+    val shape: ButtonShape = ButtonShape.WIDE,
+    val containerColor: Color,
+    val contentColor: Color,
+    val isOutlined: Boolean = false
 )
 
 @Composable
 fun IslandButtonRow(
     buttons: List<IslandButton>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onTap: (index: Int) -> Unit = {},
+    onLongPress: (index: Int) -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
-    val colors = MaterialTheme.colorScheme
 
     val springSpec = spring<Float>(
         dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -89,23 +95,42 @@ fun IslandButtonRow(
     ) {
         buttons.forEachIndexed { index, button ->
             val shape = RoundedCornerShape(radii[index].value.dp)
-            val bgColor = if (index == 0) colors.surfaceVariant else colors.secondaryContainer
             val weightMultiplier = when (button.shape) {
                 ButtonShape.WIDE -> 1.0f
                 ButtonShape.NARROW -> 0.5f
                 ButtonShape.CIRCLE -> 0.35f
             }
+            val borderModifier = if (button.isOutlined) {
+                Modifier.border(
+                    width = 1.5.dp,
+                    color = button.contentColor,
+                    shape = shape
+                )
+            } else Modifier
+
             Box(
                 modifier = Modifier
                     .weight(weights[index].value * weightMultiplier)
                     .height(82.dp)
                     .clip(shape)
+                    .then(borderModifier)
                     .indication(interactionSources[index], ripple())
-                    .background(bgColor)
-                    .pointerInput(Unit) { detectTapGestures(onPress = onPress(index)) },
+                    .background(button.containerColor)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onPress = onPress(index),
+                            onTap = { onTap(index) },
+                            onLongPress = { onLongPress(index) }
+                        )
+                    },
                 contentAlignment = Alignment.Center
             ) {
-                Text(button.icon, fontSize = 24.sp, color = colors.onSecondaryContainer)
+                Icon(
+                    painter = button.icon,
+                    contentDescription = null,
+                    tint = button.contentColor,
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
     }
