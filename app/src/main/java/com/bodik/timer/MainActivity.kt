@@ -42,6 +42,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
@@ -305,7 +306,7 @@ fun TimerScreen(
         composition = lottieRun,
         iterations = LottieConstants.IterateForever,
         isPlaying = true,
-        speed = if (timerState.isRunning) 1f else 0.5f
+        speed = if (timerState.isWorkPhase) 1f else 0.5f
     )
 
     val lottiePause by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.pause))
@@ -313,6 +314,7 @@ fun TimerScreen(
         composition = lottiePause,
         iterations = LottieConstants.IterateForever,
         isPlaying = true,
+        speed = 0.6f
     )
 
 
@@ -321,6 +323,7 @@ fun TimerScreen(
         composition = lottieRepeats,
         iterations = LottieConstants.IterateForever,
         isPlaying = true,
+        speed = 0.5f
     )
 
     UpdateStatusBar()
@@ -397,14 +400,15 @@ fun TimerScreen(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
-                .padding(bottom = 16.dp),
+                .padding(bottom = 16.dp)
+                .offset(y = (-40).dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (lottieRun != null) {
                 LottieAnimation(
-                    composition = lottieRun,
+                    composition = if (timerState.isWorkPhase) lottieRun else lottiePause,
                     progress = { progressLottieRun },
-                    modifier = Modifier.size(120.dp)
+                    modifier = Modifier.size(200.dp)
                 )
             }
             if (!isActive) {
@@ -424,18 +428,18 @@ fun TimerScreen(
                             }
                         )
                 )
-                Spacer(modifier = Modifier.height(30.dp))
+                Spacer(modifier = Modifier.height(20.dp))
                 if (lottiePause != null) {
                     LottieAnimation(
                         composition = lottiePause,
                         progress = { progressLottiePause },
-                        modifier = Modifier.size(80.dp)
+                        modifier = Modifier.size(100.dp)
                     )
                 }
                 Text(
                     text = formatTime(setRestSeconds.toInt()),
                     fontFamily = LocalFontFamily.current,
-                    fontSize = 84.sp,
+                    fontSize = 74.sp,
                     fontWeight = FontWeight.Bold,
                     color = timerTextColor,
                     modifier = Modifier
@@ -459,7 +463,7 @@ fun TimerScreen(
                 Text(
                     text = "${setRepeats.toInt()}",
                     fontFamily = LocalFontFamily.current,
-                    fontSize = 84.sp,
+                    fontSize = 64.sp,
                     fontWeight = FontWeight.Bold,
                     color = timerTextColor,
                     modifier = Modifier
@@ -502,14 +506,15 @@ fun TimerScreen(
                             setRestSeconds.toInt(),
                             setRepeats.toInt()
                         )
-                    }
+                    },
+                    modifier = Modifier.fillMaxWidth(0.8f)
                 )
             } else {
                 IslandButtonRow(
                     buttons = listOf(
                         IslandButton(
                             icon = painterResource(R.drawable.stop),
-                            shape = ButtonShape.NARROW,
+                            shape = ButtonShape.CIRCLE,
                             containerColor = Color.Transparent,
                             contentColor = accentColor,
                             isOutlined = true
@@ -547,7 +552,7 @@ fun TimerScreen(
                     }
                 )
             }
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(10.dp))
         }
     }
 
@@ -630,11 +635,6 @@ private fun ColumnScope.ActiveTimerDisplay(
             gapSize = 4.dp
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                painter = painterResource(if (timerState.isWorkPhase) R.drawable.play else R.drawable.pause),
-                contentDescription = null,
-                modifier = Modifier.size(32.dp)
-            )
             Text(
                 text = formatTime(timerState.timeLeft),
                 fontFamily = LocalFontFamily.current,

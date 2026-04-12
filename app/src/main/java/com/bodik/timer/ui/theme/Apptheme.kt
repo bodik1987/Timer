@@ -263,7 +263,7 @@ private val FontDefault = FontFamily(
 )
 
 private val DotsFontFamily = FontFamily(
-    Font(R.font.dots, FontWeight.Normal),
+    Font(R.font.dots, FontWeight.Bold),
 )
 
 private val OswaldFontFamily = FontFamily(
@@ -276,6 +276,19 @@ private val MonoFontFamily = FontFamily(
     Font(R.font.mono_medium, FontWeight.Bold),
 )
 
+private val F_1FontFamily = FontFamily(
+    Font(R.font.f_1, FontWeight.Bold),
+)
+private val F_2FontFamily = FontFamily(
+    Font(R.font.f_2, FontWeight.Bold),
+)
+private val F_3FontFamily = FontFamily(
+    Font(R.font.f_3, FontWeight.Bold),
+)
+private val F_6FontFamily = FontFamily(
+    Font(R.font.f_6, FontWeight.Bold),
+)
+
 data class FontOption(
     val id: String,
     val label: String,
@@ -283,10 +296,14 @@ data class FontOption(
 )
 
 val AvailableFonts: List<FontOption> = listOf(
-    FontOption("1", "1", FontDefault),
-    FontOption("2", "2", OswaldFontFamily),
-    FontOption("4", "4", DotsFontFamily),
-    FontOption("5", "5", MonoFontFamily),
+    FontOption("1", "1.1", FontDefault),
+    FontOption("2", "1.2", OswaldFontFamily),
+    FontOption("3", "1.3", MonoFontFamily),
+    FontOption("4", "1.4", F_3FontFamily),
+    FontOption("6", "2.1", DotsFontFamily),
+    FontOption("7", "2.2", F_1FontFamily),
+    FontOption("8", "2.3", F_6FontFamily),
+    FontOption("9", "2.4", F_2FontFamily),
 )
 
 fun fontById(id: String): FontOption = AvailableFonts.find { it.id == id } ?: AvailableFonts.first()
